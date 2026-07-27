@@ -31,6 +31,11 @@ export FLAGS_enable_pir_api="${FLAGS_enable_pir_api:-0}"
 export FLAGS_enable_pir_in_executor="${FLAGS_enable_pir_in_executor:-0}"
 export PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK="${PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK:-True}"
 
+# ---- HuggingFace: bad/expired tokens cause 401 on PUBLIC models ----
+# If downloads fail with 401, uncomment:
+#   unset HF_TOKEN HUGGING_FACE_HUB_TOKEN
+# Or login with a valid token: huggingface-cli login
+
 # ---- venv 활성화 (로컬만) ----
 if [[ -f "$_IIMT_ROOT/.venv/bin/activate" ]]; then
   # shellcheck disable=SC1091

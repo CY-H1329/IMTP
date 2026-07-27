@@ -17,6 +17,9 @@ from common.render import regions_to_pred_text, render_translations
 BASELINE_ID = "B1"
 BASELINE_NAME = "PaddleOCR + MarianMT"
 
+# Cache tokenizer/model so we don't reload per region (and avoid HF 401 on public models).
+_marian_cache: dict[str, tuple] = {}
+
 
 def _ocr_regions(image_path: Path) -> list[dict]:
     data = run_paddle_ocr(str(image_path))
@@ -25,12 +28,20 @@ def _ocr_regions(image_path: Path) -> list[dict]:
     return data["regions"]
 
 
+def _get_marian(model_name: str):
+    if model_name not in _marian_cache:
+        from transformers import MarianMTModel, MarianTokenizer
+        # token=False: public Helsinki-NLP models must not send a bad/expired HF token (401).
+        tok = MarianTokenizer.from_pretrained(model_name, token=False)
+        model = MarianMTModel.from_pretrained(model_name, token=False)
+        _marian_cache[model_name] = (tok, model)
+    return _marian_cache[model_name]
+
+
 def _translate(text: str, model_name: str) -> str:
     if not text.strip():
         return ""
-    from transformers import MarianMTModel, MarianTokenizer
-    tok = MarianTokenizer.from_pretrained(model_name)
-    model = MarianMTModel.from_pretrained(model_name)
+    tok, model = _get_marian(model_name)
     inputs = tok(text, return_tensors="pt", truncation=True, max_length=512)
     out = model.generate(**inputs, max_length=512)
     return tok.decode(out[0], skip_special_tokens=True)
