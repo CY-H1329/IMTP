@@ -41,6 +41,31 @@ baselines:
     category: ours
 
 lang_pairs:
+  en-de:
+    marian: Helsinki-NLP/opus-mt-en-de
+    marian_fallbacks:
+      - Helsinki-NLP/opus-mt-en-de
+    mbart_src: en_XX
+    mbart_tgt: de_DE
+  en-es:
+    marian: Helsinki-NLP/opus-mt-en-es
+    marian_fallbacks:
+      - Helsinki-NLP/opus-mt-en-es
+    mbart_src: en_XX
+    mbart_tgt: es_XX
+  en-ru:
+    marian: Helsinki-NLP/opus-mt-en-ru
+    marian_fallbacks:
+      - Helsinki-NLP/opus-mt-en-ru
+    mbart_src: en_XX
+    mbart_tgt: ru_RU
+  en-zh:
+    marian: Helsinki-NLP/opus-mt-en-zh
+    marian_fallbacks:
+      - Helsinki-NLP/opus-mt-en-zh
+      - Helsinki-NLP/opus-mt-tc-big-en-zh
+    mbart_src: en_XX
+    mbart_tgt: zh_CN
   en-ko:
     marian: Helsinki-NLP/opus-mt-tc-big-en-ko
     marian_fallbacks:
@@ -48,24 +73,9 @@ lang_pairs:
       - Helsinki-NLP/opus-mt-en-ko
     mbart_src: en_XX
     mbart_tgt: ko_KR
-  en-zh:
-    marian: Helsinki-NLP/opus-mt-zh-en
-    # note: zh-en direction; prefer dedicated en-zh if available
-    marian_fallbacks:
-      - Helsinki-NLP/opus-mt-en-zh
-      - Helsinki-NLP/opus-mt-tc-big-en-zh
-    mbart_src: en_XX
-    mbart_tgt: zh_CN
   en-ja:
     marian: Helsinki-NLP/opus-mt-en-jap
     marian_fallbacks:
       - Helsinki-NLP/opus-mt-en-jap
-      - Helsinki-NLP/opus-mt-tc-big-en-ja
     mbart_src: en_XX
     mbart_tgt: ja_XX
-  en-de:
-    marian: Helsinki-NLP/opus-mt-en-de
-    marian_fallbacks:
-      - Helsinki-NLP/opus-mt-en-de
-    mbart_src: en_XX
-    mbart_tgt: de_DE
