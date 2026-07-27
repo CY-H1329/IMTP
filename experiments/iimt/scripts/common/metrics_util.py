@@ -97,7 +97,17 @@ def _configure_paddle_runtime() -> None:
         pass
 
 
+# Reuse one PaddleOCR across samples. Re-creating it reloads ~5 models from disk
+# each call (seen as repeating "Creating model: ..." for tens of minutes).
+_paddle_ocr_singleton = None
+_paddle_ocr_init_logged = False
+
+
 def _make_paddle_ocr():
+    global _paddle_ocr_singleton, _paddle_ocr_init_logged
+    if _paddle_ocr_singleton is not None:
+        return _paddle_ocr_singleton
+
     from paddleocr import PaddleOCR
 
     # Prefer GPU when visible; fall back to CPU without MKLDNN.
@@ -122,7 +132,16 @@ def _make_paddle_ocr():
         ]
         for kwargs in kwargs_list:
             try:
-                return PaddleOCR(**kwargs)
+                ocr = PaddleOCR(**kwargs)
+                _paddle_ocr_singleton = ocr
+                if not _paddle_ocr_init_logged:
+                    print(
+                        f"[paddleocr] initialized once with kwargs={kwargs} "
+                        f"(cached for all samples)",
+                        flush=True,
+                    )
+                    _paddle_ocr_init_logged = True
+                return ocr
             except TypeError as e:
                 last_err = e
                 continue
