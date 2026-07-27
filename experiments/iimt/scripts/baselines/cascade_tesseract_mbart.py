@@ -23,12 +23,23 @@ MBART_LANG = {
 }
 
 
+def _tesseract_available() -> bool:
+    import shutil
+    return shutil.which("tesseract") is not None
+
+
 def _ocr_regions(image_path: Path) -> list[dict]:
     try:
         import pytesseract
         from PIL import Image
     except ImportError as e:
         raise RuntimeError(f"pytesseract required: {e}") from e
+
+    if not _tesseract_available():
+        raise RuntimeError(
+            "tesseract binary not found in PATH. "
+            "Install without sudo: conda install -y -c conda-forge tesseract"
+        )
 
     data = pytesseract.image_to_data(Image.open(image_path), output_type=pytesseract.Output.DICT)
     regions = []
@@ -49,14 +60,20 @@ def _ocr_regions(image_path: Path) -> list[dict]:
 def _translate(text: str, model_name: str, src_lang: str, tgt_lang: str) -> str:
     if not text.strip():
         return ""
+    import os
+    import torch
     from transformers import MBart50TokenizerFast, MBartForConditionalGeneration
-    tok = MBart50TokenizerFast.from_pretrained(model_name)
-    model = MBartForConditionalGeneration.from_pretrained(model_name)
+
+    token = os.environ.get("IIMT_HF_TOKEN") or os.environ.get("HF_TOKEN")
+    kwargs = {"token": token} if token else {"token": False}
+    tok = MBart50TokenizerFast.from_pretrained(model_name, **kwargs)
+    model = MBartForConditionalGeneration.from_pretrained(model_name, **kwargs)
     src = MBART_LANG.get(src_lang, src_lang)
     tgt = MBART_LANG.get(tgt_lang, tgt_lang)
     tok.src_lang = src
     enc = tok(text, return_tensors="pt", truncation=True, max_length=512)
-    out = model.generate(**enc, forced_bos_token_id=tok.lang_code_to_id[tgt], max_length=512)
+    with torch.no_grad():
+        out = model.generate(**enc, forced_bos_token_id=tok.lang_code_to_id[tgt], max_length=512)
     return tok.decode(out[0], skip_special_tokens=True)
 
 
@@ -66,6 +83,30 @@ def run_sample(
     mbart_model: str,
 ) -> Path:
     timer = Timer()
+    if not _tesseract_available():
+        return save_outputs(
+            out_dir,
+            pred_text="",
+            pred_image_path=None,
+            reocr={"status": "skipped"},
+            baseline_id=BASELINE_ID,
+            baseline_name=BASELINE_NAME,
+            record_meta={
+                "sample_id": record.sample_id,
+                "benchmark": record.benchmark,
+                "src_lang": record.src_lang,
+                "tgt_lang": record.tgt_lang,
+            },
+            latency_sec=timer.elapsed(),
+            model_version=mbart_model,
+            status="setup_required",
+            error=(
+                "tesseract binary missing. "
+                "Run: conda install -y -c conda-forge tesseract "
+                "(do NOT use sudo apt on shared servers)"
+            ),
+        )
+
     regions = _ocr_regions(record.image_path)
     translated = []
     for reg in regions:
