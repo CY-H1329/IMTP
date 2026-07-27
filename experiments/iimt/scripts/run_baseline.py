@@ -58,13 +58,22 @@ def main() -> None:
 
     for rec in records:
         out_dir = out_base / rec.sample_id
-        kwargs = {}
         if args.baseline == "B1":
-            kwargs["marian_model"] = args.marian_model or bl_cfg.get("default_marian", "Helsinki-NLP/opus-mt-en-ko")
-            mod.run_sample(rec, out_dir, kwargs["marian_model"])
+            pair = f"{rec.src_lang}-{rec.tgt_lang}"
+            pair_cfg = (cfg.get("lang_pairs") or {}).get(pair, {})
+            marian = (
+                args.marian_model
+                or pair_cfg.get("marian")
+                or bl_cfg.get("default_marian", "Helsinki-NLP/opus-mt-tc-big-en-ko")
+            )
+            fallbacks = pair_cfg.get("marian_fallbacks") or [
+                "Helsinki-NLP/opus-mt-tc-big-en-ko",
+                "Helsinki-NLP/opus-mt-en-ko",
+            ]
+            mod.run_sample(rec, out_dir, marian, marian_fallbacks=fallbacks)
         elif args.baseline == "B2":
-            kwargs["mbart_model"] = args.mbart_model or bl_cfg.get("default_mbart", "facebook/mbart-large-50-many-to-many-mmt")
-            mod.run_sample(rec, out_dir, kwargs["mbart_model"])
+            mbart = args.mbart_model or bl_cfg.get("default_mbart", "facebook/mbart-large-50-many-to-many-mmt")
+            mod.run_sample(rec, out_dir, mbart)
         elif args.baseline == "B5":
             model = args.hf_model or bl_cfg.get("hf_model", "yztian/VisTrans")
             mod.run_sample(rec, out_dir, model)

@@ -76,7 +76,7 @@ def _local_marian_ready(path: Path) -> bool:
     return has_cfg and has_tok and has_w
 
 
-def _get_marian(model_name: str):
+def _get_marian(model_name: str, fallbacks: list | None = None):
     if model_name in _marian_cache:
         return _marian_cache[model_name]
 
@@ -100,11 +100,17 @@ def _get_marian(model_name: str):
     local_candidates = []
     if local and _local_marian_ready(Path(local)):
         local_candidates.append(local)
-    default_local = ROOT / ".cache" / "models" / "opus-mt-en-ko"
-    if _local_marian_ready(default_local):
-        local_candidates.append(str(default_local))
+    for name in [model_name, *(fallbacks or [])]:
+        slug = name.split("/")[-1]
+        default_local = ROOT / ".cache" / "models" / slug
+        if _local_marian_ready(default_local):
+            local_candidates.append(str(default_local))
 
     last_err = None
+    hub_ids = []
+    for mid in [model_name, *(fallbacks or [])]:
+        if mid not in hub_ids:
+            hub_ids.append(mid)
 
     # 1) Complete local folders only
     for load_id in local_candidates:
@@ -119,59 +125,66 @@ def _get_marian(model_name: str):
             last_err = e
             print(f"[B1] local load failed: {e}", flush=True)
 
-    # 2) Hub with explicit valid token (this cluster blocks anonymous)
+    # 2) Hub with explicit valid token — try primary + fallbacks
+    #    (opus-mt-en-ko returns 404; opus-mt-tc-big-en-ko is the working id)
     if user_token:
+        for mid in hub_ids:
+            try:
+                print(f"[B1] Loading Marian from Hub with HF token: {mid}", flush=True)
+                tok = MarianTokenizer.from_pretrained(mid, token=user_token)
+                model = MarianMTModel.from_pretrained(mid, token=user_token)
+                model.eval()
+                _marian_cache[model_name] = (tok, model)
+                return _marian_cache[model_name]
+            except Exception as e:
+                last_err = e
+                print(f"[B1] Hub+token failed for {mid}: {e}", flush=True)
+
+    # 3) Anonymous last resort
+    for mid in hub_ids:
         try:
-            print(f"[B1] Loading Marian from Hub with HF token: {model_name}", flush=True)
-            tok = MarianTokenizer.from_pretrained(model_name, token=user_token)
-            model = MarianMTModel.from_pretrained(model_name, token=user_token)
+            print(f"[B1] Loading Marian anonymously: {mid}", flush=True)
+            tok = MarianTokenizer.from_pretrained(mid, token=False)
+            model = MarianMTModel.from_pretrained(mid, token=False)
             model.eval()
             _marian_cache[model_name] = (tok, model)
             return _marian_cache[model_name]
         except Exception as e:
             last_err = e
-            print(f"[B1] Hub+token failed: {e}", flush=True)
-
-    # 3) Anonymous last resort
-    try:
-        print(f"[B1] Loading Marian anonymously: {model_name}", flush=True)
-        tok = MarianTokenizer.from_pretrained(model_name, token=False)
-        model = MarianMTModel.from_pretrained(model_name, token=False)
-        model.eval()
-        _marian_cache[model_name] = (tok, model)
-        return _marian_cache[model_name]
-    except Exception as e:
-        last_err = e
 
     raise RuntimeError(
         "Failed to load MarianMT.\n"
-        "Your token may be invalid, or Hub access is blocked.\n"
-        "Check:  python -c \"from huggingface_hub import whoami; print(whoami(token='$HF_TOKEN'))\"\n"
-        "Or:     huggingface-cli login\n"
-        "Or:     python scripts/download_marian_anon.py --out_dir .cache/models/opus-mt-en-ko\n"
+        f"Tried: {hub_ids}\n"
+        "Check token:  python -c \"from huggingface_hub import whoami; import os; print(whoami(token=os.environ.get('HF_TOKEN')))\"\n"
+        "Or set IIMT_MARIAN_DIR to a local model folder.\n"
         f"Original error: {last_err}"
     ) from last_err
 
 
-def _translate(text: str, model_name: str) -> str:
+def _translate(text: str, model_name: str, fallbacks: list | None = None) -> str:
     if not text.strip():
         return ""
     import torch
 
-    tok, model = _get_marian(model_name)
+    tok, model = _get_marian(model_name, fallbacks=fallbacks)
     inputs = tok(text, return_tensors="pt", truncation=True, max_length=512)
     with torch.no_grad():
         out = model.generate(**inputs, max_length=512)
     return tok.decode(out[0], skip_special_tokens=True)
 
 
-def run_sample(record: SampleRecord, out_dir: Path, marian_model: str) -> Path:
+def run_sample(
+    record: SampleRecord,
+    out_dir: Path,
+    marian_model: str,
+    marian_fallbacks: list | None = None,
+) -> Path:
     timer = Timer()
     regions = _ocr_regions(record.image_path)
     translated_regions = []
     for reg in regions:
         src = reg.get("text", "")
-        tgt = _translate(src, marian_model)
+        tgt = _translate(src, marian_model, fallbacks=marian_fallbacks)
         translated_regions.append({**reg, "translated": tgt})
 
     pred_text = regions_to_pred_text(translated_regions)
@@ -203,7 +216,7 @@ def main() -> None:
     p.add_argument("--manifest", type=Path)
     p.add_argument("--out_dir", type=Path)
     p.add_argument("--out_root", type=Path)
-    p.add_argument("--marian_model", default="Helsinki-NLP/opus-mt-en-ko")
+    p.add_argument("--marian_model", default="Helsinki-NLP/opus-mt-tc-big-en-ko")
     args = p.parse_args()
 
     if args.manifest:

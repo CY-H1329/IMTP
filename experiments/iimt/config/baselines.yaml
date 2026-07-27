@@ -3,7 +3,8 @@ baselines:
     name: PaddleOCR + MarianMT
     script: cascade_paddle_marian
     category: cascade
-    default_marian: Helsinki-NLP/opus-mt-en-ko
+    # opus-mt-en-ko is missing/broken on Hub (404). Prefer tc-big.
+    default_marian: Helsinki-NLP/opus-mt-tc-big-en-ko
   B2:
     name: Tesseract + mBART
     script: cascade_tesseract_mbart
@@ -41,14 +42,30 @@ baselines:
 
 lang_pairs:
   en-ko:
-    marian: Helsinki-NLP/opus-mt-en-ko
+    marian: Helsinki-NLP/opus-mt-tc-big-en-ko
+    marian_fallbacks:
+      - Helsinki-NLP/opus-mt-tc-big-en-ko
+      - Helsinki-NLP/opus-mt-en-ko
     mbart_src: en_XX
     mbart_tgt: ko_KR
   en-zh:
     marian: Helsinki-NLP/opus-mt-zh-en
+    # note: zh-en direction; prefer dedicated en-zh if available
+    marian_fallbacks:
+      - Helsinki-NLP/opus-mt-en-zh
+      - Helsinki-NLP/opus-mt-tc-big-en-zh
     mbart_src: en_XX
     mbart_tgt: zh_CN
   en-ja:
-    marian: Helsinki-NLP/opus-mt-jap-en
+    marian: Helsinki-NLP/opus-mt-en-jap
+    marian_fallbacks:
+      - Helsinki-NLP/opus-mt-en-jap
+      - Helsinki-NLP/opus-mt-tc-big-en-ja
     mbart_src: en_XX
     mbart_tgt: ja_XX
+  en-de:
+    marian: Helsinki-NLP/opus-mt-en-de
+    marian_fallbacks:
+      - Helsinki-NLP/opus-mt-en-de
+    mbart_src: en_XX
+    mbart_tgt: de_DE
