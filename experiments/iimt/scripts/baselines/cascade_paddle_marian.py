@@ -73,28 +73,51 @@ def _get_marian(model_name: str):
 
         _scrub_bad_hf_credentials()
 
-        # Local path override: IIMT_MARIAN_DIR=/path/to/opus-mt-en-ko
         local = os.environ.get("IIMT_MARIAN_DIR")
-        load_id = local if local and Path(local).exists() else model_name
+        # Prefer local dirs (avoid Hub entirely when possible)
+        candidates = []
+        if local and Path(local).exists():
+            candidates.append(local)
+        default_local = ROOT / ".cache" / "models" / "opus-mt-en-ko"
+        if default_local.exists():
+            candidates.append(str(default_local))
+        candidates.append(model_name)
 
-        try:
-            tok = MarianTokenizer.from_pretrained(load_id, token=False)
-            model = MarianMTModel.from_pretrained(load_id, token=False)
-        except Exception as first_err:
-            # Last resort: valid interactive login token (gated clusters)
-            token = os.environ.get("IIMT_HF_TOKEN")  # explicit opt-in only
-            if not token:
-                raise RuntimeError(
-                    "Failed to load MarianMT (HF 401/network). "
-                    "Fix: unset HF_TOKEN; rm HF token files; or "
-                    "`huggingface-cli login` with a valid token; or "
-                    "set IIMT_MARIAN_DIR to a local model folder. "
-                    f"Original error: {first_err}"
-                ) from first_err
-            tok = MarianTokenizer.from_pretrained(load_id, token=token)
-            model = MarianMTModel.from_pretrained(load_id, token=token)
-        model.eval()
-        _marian_cache[model_name] = (tok, model)
+        last_err = None
+        for load_id in candidates:
+            try:
+                print(f"[B1] Loading Marian from: {load_id}", flush=True)
+                tok = MarianTokenizer.from_pretrained(load_id, token=False, local_files_only=Path(load_id).exists())
+                model = MarianMTModel.from_pretrained(load_id, token=False, local_files_only=Path(load_id).exists())
+                model.eval()
+                _marian_cache[model_name] = (tok, model)
+                return _marian_cache[model_name]
+            except Exception as e:
+                last_err = e
+                continue
+
+        token = os.environ.get("IIMT_HF_TOKEN") or os.environ.get("HF_TOKEN")
+        if token:
+            try:
+                print("[B1] Retry Marian with explicit IIMT_HF_TOKEN/HF_TOKEN", flush=True)
+                tok = MarianTokenizer.from_pretrained(model_name, token=token)
+                model = MarianMTModel.from_pretrained(model_name, token=token)
+                model.eval()
+                _marian_cache[model_name] = (tok, model)
+                return _marian_cache[model_name]
+            except Exception as e:
+                last_err = e
+
+        raise RuntimeError(
+            "Failed to load MarianMT (HF 401/network).\n"
+            "Run diagnostics:  python scripts/diag_hf_env.py\n"
+            "Then either:\n"
+            "  A) huggingface-cli login   # valid Read token\n"
+            "  B) python scripts/download_marian_anon.py --out_dir .cache/models/opus-mt-en-ko\n"
+            "     export IIMT_MARIAN_DIR=$PWD/.cache/models/opus-mt-en-ko\n"
+            f"Original error: {last_err}"
+        ) from last_err
+
     return _marian_cache[model_name]
 
 
