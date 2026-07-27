@@ -5,30 +5,108 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 
+def _parse_paddle_ocr_result(result: Any) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """Support PaddleOCR 2.x list format and 3.x predict() dict/OCRResult format."""
+    regions: List[Dict[str, Any]] = []
+    texts: List[str] = []
+
+    if result is None:
+        return regions, texts
+
+    # PaddleOCR 3.x: list of dict-like results with rec_texts / dt_polys
+    if isinstance(result, list) and result and isinstance(result[0], dict):
+        for item in result:
+            rec_texts = item.get("rec_texts") or item.get("rec_text") or []
+            rec_scores = item.get("rec_scores") or item.get("rec_score") or []
+            polys = item.get("dt_polys") or item.get("rec_polys") or item.get("dt_boxes") or []
+            if isinstance(rec_texts, str):
+                rec_texts = [rec_texts]
+            if not isinstance(rec_scores, (list, tuple)):
+                rec_scores = [rec_scores] * len(rec_texts)
+            for i, txt in enumerate(rec_texts):
+                conf = float(rec_scores[i]) if i < len(rec_scores) else 0.0
+                bbox = [0, 0, 0, 0]
+                if i < len(polys) and polys[i] is not None:
+                    poly = polys[i]
+                    try:
+                        xs = [float(p[0]) for p in poly]
+                        ys = [float(p[1]) for p in poly]
+                        bbox = [int(min(xs)), int(min(ys)), int(max(xs)), int(max(ys))]
+                    except Exception:
+                        pass
+                regions.append({"bbox": bbox, "text": str(txt), "confidence": conf})
+                texts.append(str(txt))
+        return regions, texts
+
+    # PaddleOCR 3.x OCRResult objects (attribute access)
+    if isinstance(result, list) and result and hasattr(result[0], "get"):
+        try:
+            return _parse_paddle_ocr_result([dict(r) if not isinstance(r, dict) else r for r in result])
+        except Exception:
+            pass
+    if isinstance(result, list) and result and hasattr(result[0], "rec_texts"):
+        converted = []
+        for r in result:
+            converted.append({
+                "rec_texts": getattr(r, "rec_texts", []),
+                "rec_scores": getattr(r, "rec_scores", []),
+                "dt_polys": getattr(r, "dt_polys", getattr(r, "rec_polys", [])),
+            })
+        return _parse_paddle_ocr_result(converted)
+
+    # PaddleOCR 2.x: [[[box], (text, conf)], ...]
+    for block in result or []:
+        if not block:
+            continue
+        # Sometimes a single page is already a list of lines
+        lines = block if isinstance(block[0], (list, tuple)) and len(block[0]) == 2 else [block]
+        for line in lines:
+            try:
+                box, meta = line
+                if isinstance(meta, (list, tuple)):
+                    txt, conf = meta[0], float(meta[1])
+                else:
+                    txt, conf = str(meta), 0.0
+                xs = [p[0] for p in box]
+                ys = [p[1] for p in box]
+                bbox = [int(min(xs)), int(min(ys)), int(max(xs)), int(max(ys))]
+                regions.append({"bbox": bbox, "text": txt, "confidence": conf})
+                texts.append(txt)
+            except Exception:
+                continue
+    return regions, texts
+
+
 def run_paddle_ocr(image_path: str) -> Dict[str, Any]:
     try:
         from paddleocr import PaddleOCR
     except ImportError as e:
         return {"status": "skipped", "error": str(e), "regions": [], "full_text": ""}
 
-    ocr = PaddleOCR(use_angle_cls=True, lang="en", show_log=False)
-    result = ocr.ocr(image_path, cls=True)
-    regions: List[Dict[str, Any]] = []
-    texts: List[str] = []
-    for block in result or []:
-        for line in block or []:
-            box, (txt, conf) = line
-            xs = [p[0] for p in box]
-            ys = [p[1] for p in box]
-            bbox = [int(min(xs)), int(min(ys)), int(max(xs)), int(max(ys))]
-            regions.append({"bbox": bbox, "text": txt, "confidence": float(conf)})
-            texts.append(txt)
-    return {
-        "status": "ok",
-        "engine": "paddleocr",
-        "regions": regions,
-        "full_text": " ".join(texts),
-    }
+    try:
+        # PaddleOCR 3.x rejects show_log / some 2.x kwargs
+        try:
+            ocr = PaddleOCR(lang="en")
+        except TypeError:
+            ocr = PaddleOCR(use_angle_cls=True, lang="en")
+
+        if hasattr(ocr, "predict"):
+            raw = ocr.predict(image_path)
+        else:
+            try:
+                raw = ocr.ocr(image_path, cls=True)
+            except TypeError:
+                raw = ocr.ocr(image_path)
+
+        regions, texts = _parse_paddle_ocr_result(raw)
+        return {
+            "status": "ok",
+            "engine": "paddleocr",
+            "regions": regions,
+            "full_text": " ".join(texts),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e), "regions": [], "full_text": ""}
 
 
 def cer(ref: str, hyp: str) -> float:
