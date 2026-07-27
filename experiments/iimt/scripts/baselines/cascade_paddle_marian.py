@@ -76,12 +76,22 @@ def _local_marian_ready(path: Path) -> bool:
     return has_cfg and has_tok and has_w
 
 
+def _torch_device():
+    import torch
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    return torch.device("cpu")
+
+
 def _get_marian(model_name: str, fallbacks: list | None = None):
     if model_name in _marian_cache:
         return _marian_cache[model_name]
 
     import os
     from transformers import MarianMTModel, MarianTokenizer
+
+    device = _torch_device()
+    print(f"[B1] torch device = {device}", flush=True)
 
     # Keep user-provided token BEFORE scrub (scrub was deleting HF_TOKEN → forever 401).
     user_token = (
@@ -112,30 +122,32 @@ def _get_marian(model_name: str, fallbacks: list | None = None):
         if mid not in hub_ids:
             hub_ids.append(mid)
 
+    def _finish(tok, model, tag: str):
+        model.to(device)
+        model.eval()
+        print(f"[B1] Marian ready on {device} ({tag})", flush=True)
+        _marian_cache[model_name] = (tok, model, device)
+        return _marian_cache[model_name]
+
     # 1) Complete local folders only
     for load_id in local_candidates:
         try:
             print(f"[B1] Loading Marian locally: {load_id}", flush=True)
             tok = MarianTokenizer.from_pretrained(load_id, local_files_only=True)
             model = MarianMTModel.from_pretrained(load_id, local_files_only=True)
-            model.eval()
-            _marian_cache[model_name] = (tok, model)
-            return _marian_cache[model_name]
+            return _finish(tok, model, load_id)
         except Exception as e:
             last_err = e
             print(f"[B1] local load failed: {e}", flush=True)
 
     # 2) Hub with explicit valid token — try primary + fallbacks
-    #    (opus-mt-en-ko returns 404; opus-mt-tc-big-en-ko is the working id)
     if user_token:
         for mid in hub_ids:
             try:
                 print(f"[B1] Loading Marian from Hub with HF token: {mid}", flush=True)
                 tok = MarianTokenizer.from_pretrained(mid, token=user_token)
                 model = MarianMTModel.from_pretrained(mid, token=user_token)
-                model.eval()
-                _marian_cache[model_name] = (tok, model)
-                return _marian_cache[model_name]
+                return _finish(tok, model, mid)
             except Exception as e:
                 last_err = e
                 print(f"[B1] Hub+token failed for {mid}: {e}", flush=True)
@@ -146,9 +158,7 @@ def _get_marian(model_name: str, fallbacks: list | None = None):
             print(f"[B1] Loading Marian anonymously: {mid}", flush=True)
             tok = MarianTokenizer.from_pretrained(mid, token=False)
             model = MarianMTModel.from_pretrained(mid, token=False)
-            model.eval()
-            _marian_cache[model_name] = (tok, model)
-            return _marian_cache[model_name]
+            return _finish(tok, model, mid)
         except Exception as e:
             last_err = e
 
@@ -166,8 +176,9 @@ def _translate(text: str, model_name: str, fallbacks: list | None = None) -> str
         return ""
     import torch
 
-    tok, model = _get_marian(model_name, fallbacks=fallbacks)
+    tok, model, device = _get_marian(model_name, fallbacks=fallbacks)
     inputs = tok(text, return_tensors="pt", truncation=True, max_length=512)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
     with torch.no_grad():
         out = model.generate(**inputs, max_length=512)
     return tok.decode(out[0], skip_special_tokens=True)
