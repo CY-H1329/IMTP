@@ -1,0 +1,54 @@
+baselines:
+  B1:
+    name: PaddleOCR + MarianMT
+    script: cascade_paddle_marian
+    category: cascade
+    default_marian: Helsinki-NLP/opus-mt-en-ko
+  B2:
+    name: Tesseract + mBART
+    script: cascade_tesseract_mbart
+    category: cascade
+    default_mbart: facebook/mbart-large-50-many-to-many-mmt
+  B3:
+    name: AnyTrans
+    script: anytrans_infer
+    category: edit
+    third_party: third_party/AnyTrans
+  B4:
+    name: Translatotron-V
+    script: translatotron_v_infer
+    category: e2e
+    third_party: third_party/Translatotron-V
+  B5:
+    name: VisTrans / PRIM
+    script: vistrans_infer
+    category: practical
+    hf_model: yztian/VisTrans
+  B6:
+    name: InImageTrans
+    script: inimagetrans_infer
+    category: mllm
+    third_party: third_party/InImageTrans
+  B7:
+    name: DIMT25 Track2
+    script: dimt25_infer
+    category: document
+    hf_model: liangyupu/DIMT2025.ICDAR.Track_2
+  Ours:
+    name: ReDesign text pipeline
+    script: redesign_infer
+    category: ours
+
+lang_pairs:
+  en-ko:
+    marian: Helsinki-NLP/opus-mt-en-ko
+    mbart_src: en_XX
+    mbart_tgt: ko_KR
+  en-zh:
+    marian: Helsinki-NLP/opus-mt-zh-en
+    mbart_src: en_XX
+    mbart_tgt: zh_CN
+  en-ja:
+    marian: Helsinki-NLP/opus-mt-jap-en
+    mbart_src: en_XX
+    mbart_tgt: ja_XX

@@ -1,0 +1,3 @@
+# VISTRA test manifest — replace image_path with downloaded VISTRA samples
+# Download: see https://arxiv.org/html/2406.11432v1
+{"sample_id": "vistra_placeholder_001", "benchmark": "VISTRA", "split": "test", "scenario": "scene", "image_path": "../../../samples/speaker_spotlight.png", "src_lang": "en", "tgt_lang": "ko", "ref_text": "PLACEHOLDER", "ref_regions": []}

@@ -1,0 +1,17 @@
+# Core experiment harness
+numpy>=1.26,<2.4
+Pillow>=10.0
+PyYAML>=6.0
+tqdm>=4.66
+python-dotenv>=1.0
+
+# Metrics
+sacrebleu>=2.4
+jiwer>=3.0
+scikit-image>=0.22
+opencv-python-headless>=4.8
+
+# Optional — install when running specific baselines
+# paddleocr paddlepaddle-gpu transformers torch
+# pytesseract
+# unbabel-comet lpips

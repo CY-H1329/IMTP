@@ -1,0 +1,3 @@
+# IMTBench test manifest — replace with official IMTBench paths after download
+{"sample_id": "imtbench_doc_001", "benchmark": "IMTBench", "split": "test", "scenario": "document", "image_path": "../../../samples/simple_text_design.png", "src_lang": "en", "tgt_lang": "ko", "ref_text": "PLACEHOLDER", "ref_regions": []}
+{"sample_id": "imtbench_scene_001", "benchmark": "IMTBench", "split": "test", "scenario": "scene", "image_path": "../../../samples/speaker_spotlight.png", "src_lang": "en", "tgt_lang": "ko", "ref_text": "PLACEHOLDER", "ref_regions": []}
