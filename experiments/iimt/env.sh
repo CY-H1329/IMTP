@@ -24,6 +24,13 @@ mkdir -p "$HF_HOME" "$TORCH_HOME" "$PIP_CACHE_DIR" "$TMPDIR"
 # ---- GPU: 기본 0번, 다른 사용자 GPU 침범 방지를 위해 반드시 확인 ----
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 
+# ---- PaddleOCR / PaddlePaddle: OneDNN+PIR crash workaround ----
+export FLAGS_use_mkldnn="${FLAGS_use_mkldnn:-0}"
+export FLAGS_onednn="${FLAGS_onednn:-0}"
+export FLAGS_enable_pir_api="${FLAGS_enable_pir_api:-0}"
+export FLAGS_enable_pir_in_executor="${FLAGS_enable_pir_in_executor:-0}"
+export PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK="${PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK:-True}"
+
 # ---- venv 활성화 (로컬만) ----
 if [[ -f "$_IIMT_ROOT/.venv/bin/activate" ]]; then
   # shellcheck disable=SC1091

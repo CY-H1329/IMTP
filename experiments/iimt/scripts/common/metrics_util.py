@@ -77,18 +77,72 @@ def _parse_paddle_ocr_result(result: Any) -> Tuple[List[Dict[str, Any]], List[st
     return regions, texts
 
 
+def _configure_paddle_runtime() -> None:
+    """Disable OneDNN/MKLDNN paths that crash on some GPU servers (PIR ArrayAttribute)."""
+    import os
+
+    os.environ.setdefault("FLAGS_use_mkldnn", "0")
+    os.environ.setdefault("FLAGS_onednn", "0")
+    os.environ.setdefault("FLAGS_enable_pir_api", "0")
+    os.environ.setdefault("FLAGS_enable_pir_in_executor", "0")
+    os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
+    try:
+        import paddle
+
+        paddle.set_flags({
+            "FLAGS_use_mkldnn": False,
+            "FLAGS_enable_pir_in_executor": False,
+        })
+    except Exception:
+        pass
+
+
+def _make_paddle_ocr():
+    from paddleocr import PaddleOCR
+
+    # Prefer GPU when visible; fall back to CPU without MKLDNN.
+    device_candidates = []
+    try:
+        import paddle
+        if paddle.device.is_compiled_with_cuda() and paddle.device.cuda.device_count() > 0:
+            device_candidates.append("gpu")
+            device_candidates.append("gpu:0")
+    except Exception:
+        pass
+    device_candidates.append("cpu")
+
+    last_err: Optional[Exception] = None
+    for device in device_candidates:
+        kwargs_list = [
+            {"lang": "en", "device": device, "enable_mkldnn": False},
+            {"lang": "en", "device": device},
+            {"lang": "en", "enable_mkldnn": False},
+            {"lang": "en"},
+            {"use_angle_cls": True, "lang": "en"},
+        ]
+        for kwargs in kwargs_list:
+            try:
+                return PaddleOCR(**kwargs)
+            except TypeError as e:
+                last_err = e
+                continue
+            except Exception as e:
+                last_err = e
+                continue
+    if last_err:
+        raise last_err
+    raise RuntimeError("Failed to construct PaddleOCR")
+
+
 def run_paddle_ocr(image_path: str) -> Dict[str, Any]:
     try:
-        from paddleocr import PaddleOCR
+        _configure_paddle_runtime()
+        from paddleocr import PaddleOCR  # noqa: F401 — import check
     except ImportError as e:
         return {"status": "skipped", "error": str(e), "regions": [], "full_text": ""}
 
     try:
-        # PaddleOCR 3.x rejects show_log / some 2.x kwargs
-        try:
-            ocr = PaddleOCR(lang="en")
-        except TypeError:
-            ocr = PaddleOCR(use_angle_cls=True, lang="en")
+        ocr = _make_paddle_ocr()
 
         if hasattr(ocr, "predict"):
             raw = ocr.predict(image_path)
