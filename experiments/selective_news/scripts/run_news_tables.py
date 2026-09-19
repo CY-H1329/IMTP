@@ -265,17 +265,20 @@ def main() -> None:
                 pg = rec["preserve_act_guided"]
                 tu = rec["translate_act_unguided"]
                 tg = rec["translate_act_guided"]
+                item_u = all(x.get("ok") for x in rec["S4_unguided"]) if rec["S4_unguided"] else False
+                item_g = all(x.get("ok") for x in rec["S4_guided"]) if rec["S4_guided"] else False
                 print_progress(
                     done_n,
                     total,
                     prefix=slug,
                     extra=(
-                        f"{it['id'][:32]} "
+                        f"{it['id'][:28]} "
                         f"Dec={du['ok']}/{du['n']} "
-                        f"P={sum(1 for x in pu if x.get('ok'))}/{len(pu)}"
-                        f"→{sum(1 for x in pg if x.get('ok'))}/{len(pg)} "
-                        f"T={sum(1 for x in tu if x.get('matched_gt_tgt'))}/{len(tu)}"
-                        f"→{sum(1 for x in tg if x.get('matched_gt_tgt'))}/{len(tg)}"
+                        f"ACT_item u/g={int(item_u)}/{int(item_g)} "
+                        f"(P {sum(1 for x in pu if x.get('ok'))}/{len(pu)} "
+                        f"T {sum(1 for x in tu if x.get('matched_gt_tgt'))}/{len(tu)} "
+                        f"→ P {sum(1 for x in pg if x.get('ok'))}/{len(pg)} "
+                        f"T {sum(1 for x in tg if x.get('matched_gt_tgt'))}/{len(tg)})"
                     ),
                 )
         vlm.close()

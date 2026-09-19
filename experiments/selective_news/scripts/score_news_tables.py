@@ -87,17 +87,43 @@ def summarize(rows: list[dict]) -> dict:
         ok = sum(1 for x in xs if x.get("matched_gt_tgt"))
         return {"n": n, "ok": ok, "acc": (ok / n) if n else None}
 
+    def item_perfect_rate(key: str) -> dict:
+        """Article OK only if EVERY gold span is ok (P and T together)."""
+        n = ok = 0
+        for r in rows:
+            spans = r.get(key) or []
+            if not spans:
+                continue
+            n += 1
+            if all(x.get("ok") for x in spans):
+                ok += 1
+        return {"n": n, "ok": ok, "acc": (ok / n) if n else None}
+
+    def decision_item_perfect() -> dict:
+        n = ok = 0
+        for r in rows:
+            spans = r.get("decision") or []
+            if not spans:
+                continue
+            n += 1
+            if all(x.get("ok") for x in spans):
+                ok += 1
+        return {"n": n, "ok": ok, "acc": (ok / n) if n else None}
+
     au = acc(s4u)
     ag = acc(s4g)
     ap_u, ap_g = acc(pu), acc(pg)
     at_u, at_g = tgt_acc(tu), tgt_acc(tg)
+    # Primary ACT metric: all-or-nothing per article
+    item_u = item_perfect_rate("S4_unguided")
+    item_g = item_perfect_rate("S4_guided")
+    item_d = decision_item_perfect()
 
     def delta(a, b):
         if a is None or b is None:
             return None
         return a - b
 
-    # KNOW→ACT gap on preserve (knew at KNOW but failed ACT unguided)
     know_p_ok = {
         (r.get("id"), x["span"])
         for r in rows
@@ -115,10 +141,16 @@ def summarize(rows: list[dict]) -> dict:
 
     return {
         "n_items": len(rows),
-        "scoring": "decision_probe+act_gt",
+        "scoring": "decision_probe+act_gt+item_perfect",
         "know": acc(know),
         "decision": acc(dec),
+        "decision_item": item_d,
         "preserve_decision": acc(preserve_d),
+        # primary ACT
+        "act_item_unguided": item_u,
+        "act_item_guided": item_g,
+        "delta_act_item": delta(item_g["acc"], item_u["acc"]),
+        # diagnostic span breakdown (not primary success)
         "act_preserve_unguided": ap_u,
         "act_preserve_guided": ap_g,
         "act_translate_unguided": at_u,
@@ -129,14 +161,13 @@ def summarize(rows: list[dict]) -> dict:
         "act_guided": ag,
         "delta_act": delta(ag["acc"], au["acc"]),
         "know_to_act": {"n": n_gap, "gap": gap, "rate": (gap / n_gap) if n_gap else None},
-        # aliases for older paper_tables helpers
         "preserve": acc(preserve_d),
         "translation": at_u,
-        "generation": au,
-        "unguided": au,
-        "guided": ag,
-        "delta": delta(ag["acc"], au["acc"]),
-        "act": au,
+        "generation": item_u,
+        "unguided": item_u,
+        "guided": item_g,
+        "delta": delta(item_g["acc"], item_u["acc"]),
+        "act": item_u,
     }
 
 
@@ -171,70 +202,83 @@ def main() -> None:
             summaries[slug]["know_rules"] = json.loads(kr.read_text())
 
     md = [
-        "# News selective translation — Decision + ACT",
+        "# News selective translation — Decision + ACT (item all-or-nothing)",
         "",
-        "Decision = alone with image (finding). Guided does **not** use Decision for the claim;",
-        "guided ACT = execution given TRANSLATE/PRESERVE lists. Translate OK = output≈gt_tgt.",
+        "ACT success for an article = **all** gold spans correct (translate AND preserve).",
+        "Partial credit does not count as success. Span P/T rates below are diagnostic only.",
         "",
         "## Table A. Finding (Decision probe)",
         "",
-        "| Model | n | KNOW | Decision | Preserve@Dec |",
-        "|---|---:|---:|---:|---:|",
+        "| Model | n | KNOW | Decision (span) | Decision (item all) | Preserve@Dec |",
+        "|---|---:|---:|---:|---:|---:|",
     ]
     for slug, s in summaries.items():
         md.append(
             f"| {slug} | {s['n_items']} | {fmt(s['know']['acc'])} | "
-            f"{fmt(s['decision']['acc'])} | {fmt(s['preserve_decision']['acc'])} |"
+            f"{fmt(s['decision']['acc'])} | {fmt(s['decision_item']['acc'])} | "
+            f"{fmt(s['preserve_decision']['acc'])} |"
         )
 
     md += [
         "",
-        "## Table B. ACT: unguided vs guided (what matters for Δ)",
+        "## Table B. ACT item success (primary Δ) — all spans must be right",
         "",
-        "| Model | ACT-P unguided | ACT-P guided | ΔP | ACT-T unguided | ACT-T guided | ΔT |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| Model | ACT-item unguided | ACT-item guided | Δ |",
+        "|---|---:|---:|---:|",
+    ]
+    for slug, s in summaries.items():
+        md.append(
+            f"| {slug} | {fmt(s['act_item_unguided']['acc'])} | "
+            f"{fmt(s['act_item_guided']['acc'])} | {fmt(s['delta_act_item'])} |"
+        )
+
+    md += [
+        "",
+        "## Table C. Diagnostic span breakdown (not primary)",
+        "",
+        "| Model | P-ung | P-g | T-ung | T-g |",
+        "|---|---:|---:|---:|---:|",
     ]
     for slug, s in summaries.items():
         md.append(
             f"| {slug} | {fmt(s['act_preserve_unguided']['acc'])} | "
-            f"{fmt(s['act_preserve_guided']['acc'])} | {fmt(s['delta_preserve'])} | "
+            f"{fmt(s['act_preserve_guided']['acc'])} | "
             f"{fmt(s['act_translate_unguided']['acc'])} | "
-            f"{fmt(s['act_translate_guided']['acc'])} | {fmt(s['delta_translate'])} |"
+            f"{fmt(s['act_translate_guided']['acc'])} |"
         )
 
     tex_a = [
         "% Table Decision probe",
         "\\begin{table}[t]\\centering\\small",
-        "\\caption{Finding: KNOW (no image) and Decision (with image) on gold spans. "
-        "Guided inventory is not used in this table.}",
+        "\\caption{Finding: KNOW and Decision on gold spans. Item = all spans correct.}",
         "\\label{tab:news-decision}",
-        "\\begin{tabular}{l r r r r}\\toprule",
-        "Model & n & KNOW & Decision & Pres.@Dec \\\\",
+        "\\begin{tabular}{l r r r r r}\\toprule",
+        "Model & n & KNOW & Dec.span & Dec.item & Pres.@Dec \\\\",
         "\\midrule",
     ]
     for slug, s in summaries.items():
         tex_a.append(
             f"{slug.replace('_', r'_')} & {s['n_items']} & {fmt(s['know']['acc'])} & "
-            f"{fmt(s['decision']['acc'])} & {fmt(s['preserve_decision']['acc'])} \\\\"
+            f"{fmt(s['decision']['acc'])} & {fmt(s['decision_item']['acc'])} & "
+            f"{fmt(s['preserve_decision']['acc'])} \\\\"
         )
     tex_a += ["\\bottomrule\\end{tabular}\\end{table}", ""]
 
     tex_b = [
-        "% Table ACT unguided vs guided",
+        "% Table ACT item all-or-nothing",
         "\\begin{table}[t]\\centering\\small",
-        "\\caption{ACT execution. Preserve: output$\\approx$source. Translate: output$\\approx$official target. "
-        "Guided receives the TRANSLATE/PRESERVE lists (finding given); unguided must discover and act.}",
-        "\\label{tab:news-act-guided}",
-        "\\begin{tabular}{l r r r r r r}\\toprule",
-        "Model & P-ung & P-g & $\\Delta$P & T-ung & T-g & $\\Delta$T \\\\",
+        "\\caption{ACT item success: an article counts only if every gold span is correct "
+        "(translate outputs match official targets; preserve keeps source). "
+        "Guided receives TRANSLATE/PRESERVE lists; unguided must discover and act.}",
+        "\\label{tab:news-act-item}",
+        "\\begin{tabular}{l r r r}\\toprule",
+        "Model & Unguided & Guided & $\\Delta$ \\\\",
         "\\midrule",
     ]
     for slug, s in summaries.items():
         tex_b.append(
-            f"{slug.replace('_', r'_')} & {fmt(s['act_preserve_unguided']['acc'])} & "
-            f"{fmt(s['act_preserve_guided']['acc'])} & {fmt(s['delta_preserve'])} & "
-            f"{fmt(s['act_translate_unguided']['acc'])} & "
-            f"{fmt(s['act_translate_guided']['acc'])} & {fmt(s['delta_translate'])} \\\\"
+            f"{slug.replace('_', r'_')} & {fmt(s['act_item_unguided']['acc'])} & "
+            f"{fmt(s['act_item_guided']['acc'])} & {fmt(s['delta_act_item'])} \\\\"
         )
     tex_b += ["\\bottomrule\\end{tabular}\\end{table}", ""]
 
@@ -248,25 +292,21 @@ def main() -> None:
     (dest / "summary.json").write_text(json.dumps(summaries, ensure_ascii=False, indent=2), encoding="utf-8")
     print("wrote", dest / "tables.md")
     print(
-        f"{'model':28s} {'n':>5} {'Dec':>6} "
-        f"{'P_ung':>6} {'P_g':>6} {'ΔP':>6} "
-        f"{'T_ung':>6} {'T_g':>6} {'ΔT':>6}"
+        f"{'model':28s} {'n':>4} {'Dec':>5} {'DecI':>5} "
+        f"{'ACT_u':>6} {'ACT_g':>6} {'Δ':>6}  (item=all spans ok)"
     )
     for slug, s in summaries.items():
         print(
-            f"{slug[:28]:28s} {s['n_items']:5d} {fmt(s['decision']['acc']):>6} "
-            f"{fmt(s['act_preserve_unguided']['acc']):>6} {fmt(s['act_preserve_guided']['acc']):>6} "
-            f"{fmt(s['delta_preserve']):>6} "
-            f"{fmt(s['act_translate_unguided']['acc']):>6} {fmt(s['act_translate_guided']['acc']):>6} "
-            f"{fmt(s['delta_translate']):>6}"
+            f"{slug[:28]:28s} {s['n_items']:4d} "
+            f"{fmt(s['decision']['acc']):>5} {fmt(s['decision_item']['acc']):>5} "
+            f"{fmt(s['act_item_unguided']['acc']):>6} {fmt(s['act_item_guided']['acc']):>6} "
+            f"{fmt(s['delta_act_item']):>6}"
         )
-        # raw counts too
         print(
-            f"{'':28s}       "
-            f"P {s['act_preserve_unguided']['ok']}/{s['act_preserve_unguided']['n']} → "
-            f"{s['act_preserve_guided']['ok']}/{s['act_preserve_guided']['n']}  |  "
-            f"T(gt) {s['act_translate_unguided']['ok']}/{s['act_translate_unguided']['n']} → "
-            f"{s['act_translate_guided']['ok']}/{s['act_translate_guided']['n']}"
+            f"{'':28s}  ACT items {s['act_item_unguided']['ok']}/{s['act_item_unguided']['n']} → "
+            f"{s['act_item_guided']['ok']}/{s['act_item_guided']['n']}  |  "
+            f"span diag P {s['act_preserve_unguided']['ok']}/{s['act_preserve_unguided']['n']} "
+            f"T {s['act_translate_unguided']['ok']}/{s['act_translate_unguided']['n']}"
         )
 
 

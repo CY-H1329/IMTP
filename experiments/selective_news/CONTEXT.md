@@ -32,14 +32,9 @@ Gold spans + `gt_tgt` are **frozen**. Do not hand-edit masthead/logo labels.
 
 ## Scoring (paper)
 
-Two questions, two scorers:
-
-1. **Decision** (KNOW / Decision columns): model finds TRANSLATE vs PRESERVE alone on listed gold spans. Guided inventory is **not** used here.
-2. **ACT** (unguided vs guided generation): Preserve OK ⇔ `output≈source`. Translate OK ⇔ `output≈official gt_tgt`. Missing span = fail. Keeping source on a translate span = fail (no soft free pass).
-
-Guided tells the model the TRANSLATE/PRESERVE lists → Decision is given; we measure **execution** (ACT-P / ACT-T). Primary Δ: guided ACT − unguided ACT.
-
-Results: `results/news_tables_act/`. Progress: `[####----] 120/711 (16.9%)`.
+1. **Decision**: finding T/P alone (span + optional item-all).
+2. **ACT item (primary)**: an article succeeds only if **every** gold span is correct (all translates ≈gt_tgt AND all preserves ≈source). 4/5 right = **fail**.
+3. Span P/T rates = diagnostic only. Δ = guided item − unguided item.
 
 
 | # | Name | What it measures | How to run |
