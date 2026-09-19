@@ -30,7 +30,13 @@ Gold spans + `gt_tgt` are **frozen**. Do not hand-edit masthead/logo labels.
 - Images: prefer `NEWS_DATA=.../hf_news_pack` (`crops/<article_id>/<lang>.png`). Absolute paths inside gold are remapped automatically via `scripts/paths_util.py`.
 - Pack build (on the machine that has the corpus): `python scripts/build_hf_news_pack.py` (paths inside that script may need editing once).
 
-## The 10 experiments
+## Scoring (default = STRICT)
+
+Missing any gold span in the model JSON = **fail** for that span. Extra spans ignored.
+Soft blob `score_gen` is no longer used for Table 1/3. Outputs go to `results/news_tables_strict/`.
+
+Progress logs look like: `[####------] 120/711 (16.9%)`.
+
 
 | # | Name | What it measures | How to run |
 |---|---|---|---|

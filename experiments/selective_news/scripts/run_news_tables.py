@@ -31,16 +31,17 @@ from oracle_guide import (  # noqa: E402
     guided_prompt,
     inventory,
     rules_block,
-    score_gen,
     similar,
 )
+from progress_util import print_progress  # noqa: E402
 from run_probe_chain import load_done, parse_tp  # noqa: E402
 from run_rule_yesno import ALIASES, LocalVLM, fill_prompt, parse_yn  # noqa: E402
 from run_rule_yesno import all_rules  # noqa: E402
+from strict_score import match_decision, parse_loose, score_block_strict  # noqa: E402
 
 GOLD = ROOT / "gold" / "news_eval.json"
 PROTO = json.loads((ROOT / "gold" / "probe_chain_protocol.json").read_text())
-DEFAULT_DEST = ROOT / "results" / "news_tables"
+DEFAULT_DEST = ROOT / "results" / "news_tables_strict"
 BLANK = ROOT / "results" / "_blank.png"
 
 ALIASES.update(
@@ -117,32 +118,12 @@ def decision_prompt(item: dict, inv: list[dict]) -> str:
 
 
 def match_pred(inv: list[dict], preds: list[dict]) -> list[dict]:
-    rows = []
-    for r in inv:
-        pred = None
-        for p in preds:
-            txt = p.get("text") or p.get("span") or ""
-            if similar(txt, r["text"]) or similar(r["text"], txt):
-                d = (p.get("decision") or "").lower()
-                if d in ("translate", "preserve"):
-                    pred = d
-                    break
-        rows.append(
-            {
-                "taxonomy": r["taxonomy"],
-                "span": r["text"][:200],
-                "expect": r["decision"],
-                "pred": pred,
-                "ok": pred == r["decision"] if pred else False,
-            }
-        )
-    return rows
+    """Strict: missing gold span = fail (extras ignored)."""
+    return match_decision(inv, preds, check_output=False)
 
 
 def score_block(rows: list[dict]) -> dict:
-    n = len(rows)
-    ok = sum(1 for x in rows if x.get("ok"))
-    return {"n": n, "ok": ok, "acc": (ok / n) if n else None}
+    return score_block_strict(rows)
 
 
 def run_item(vlm: LocalVLM, item: dict) -> dict:
@@ -152,16 +133,16 @@ def run_item(vlm: LocalVLM, item: dict) -> dict:
     tgt_n = TGT_NAME.get(tgt, tgt)
 
     raw_k = vlm.generate(BLANK, know_prompt(item, inv), max_new=400)
-    know_rows = match_pred(inv, parse_json_items(raw_k))
+    know_rows = match_decision(inv, parse_loose(raw_k, parse_json_items), check_output=False)
 
     raw_d = vlm.generate(img, decision_prompt(item, inv), max_new=400)
-    dec_rows = match_pred(inv, parse_json_items(raw_d))
+    dec_rows = match_decision(inv, parse_loose(raw_d, parse_json_items), check_output=False)
 
     raw_u = vlm.generate(img, PROTO["prompts"]["S4_generate"].format(tgt_n=tgt_n), max_new=500)
-    s4_u = score_gen(inv, raw_u or "")
+    s4_u = match_decision(inv, parse_loose(raw_u or "", parse_json_items), check_output=True)
 
     raw_g = vlm.generate(img, guided_prompt(item, inv), max_new=500)
-    s4_g = score_gen(inv, raw_g or "")
+    s4_g = match_decision(inv, parse_loose(raw_g or "", parse_json_items), check_output=True)
 
     def subset(rows, tax=None, expect=None):
         out = rows
@@ -179,6 +160,7 @@ def run_item(vlm: LocalVLM, item: dict) -> dict:
         "image": str(img),
         "src_lang": item.get("src_lang"),
         "tgt_lang": tgt,
+        "scoring": "strict",
         "know": know_rows,
         "decision": dec_rows,
         "S4_unguided": s4_u,
@@ -236,7 +218,10 @@ def main() -> None:
     items = [it for i, it in enumerate(items) if i % shard_n == shard_i]
     dest: Path = args.dest_dir
     dest.mkdir(parents=True, exist_ok=True)
-    print(f"news_tables gold={args.gold} shard={args.shard} n={len(items)}", flush=True)
+    print(
+        f"news_tables STRICT gold={args.gold} shard={args.shard} n={len(items)} dest={dest}",
+        flush=True,
+    )
     for spec in args.models:
         mid = ALIASES.get(spec, spec)
         slug = mid.split("/")[-1].replace(" ", "_")
@@ -248,26 +233,35 @@ def main() -> None:
             kr = run_know_rules(vlm)
             rules_p.write_text(json.dumps(kr, ensure_ascii=False, indent=2), encoding="utf-8")
             print(f"{slug} KNOW-rules {kr['n_ok']}/{kr['n']}", flush=True)
+        todo = [it for it in items if it["id"] not in done]
+        total = len(items)
+        already = total - len(todo)
+        print_progress(already, total, prefix=f"{slug} resume")
         n = 0
         with outp.open("a", encoding="utf-8") as f:
-            for it in items:
-                if it["id"] in done:
-                    continue
+            for it in todo:
                 rec = run_item(vlm, it)
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
                 f.flush()
                 n += 1
+                done_n = already + n
                 ku = score_block(rec["know"])
                 du = score_block(rec["decision"])
                 su = score_block(rec["S4_unguided"])
                 sg = score_block(rec["S4_guided"])
-                print(
-                    f"{slug} {it['id'][:48]} know={ku['ok']}/{ku['n']} "
-                    f"dec={du['ok']}/{du['n']} S4u={su['ok']}/{su['n']} "
-                    f"S4g={sg['ok']}/{sg['n']}",
-                    flush=True,
+                print_progress(
+                    done_n,
+                    total,
+                    prefix=slug,
+                    extra=(
+                        f"{it['id'][:40]} know={ku['ok']}/{ku['n']} "
+                        f"dec={du['ok']}/{du['n']} "
+                        f"S4u={su['ok']}/{su['n']}(miss{su.get('missing',0)}) "
+                        f"S4g={sg['ok']}/{sg['n']}(miss{sg.get('missing',0)})"
+                    ),
                 )
         vlm.close()
+        print_progress(total, total, prefix=f"{slug} DONE")
         print("wrote", outp, "new", n)
 
 

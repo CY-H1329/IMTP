@@ -14,7 +14,7 @@ IFS=',' read -r -a GPU_ARR <<< "$GPUS"
 GOLD="${GOLD:-$SN_ROOT/gold/news_eval.json}"
 OUT="${OUT:-$SN_ROOT/results}"
 LOG="$SN_ROOT/logs"
-mkdir -p "$OUT" "$LOG" "$OUT/news_tables" "$OUT/bind_method" "$OUT/lang" "$OUT/strict_small" "$OUT/rule_yesno"
+mkdir -p "$OUT" "$LOG" "$OUT/news_tables_strict" "$OUT/bind_method" "$OUT/lang" "$OUT/strict_small" "$OUT/rule_yesno"
 MODE="${1:-smoke}"
 LIMIT="${LIMIT:-0}"   # 0 = all articles
 
@@ -70,23 +70,24 @@ case "$MODE" in
     ;;
 
   tables)
-    # E2–E8: KNOW / Decision / Preserve / ACT / Trans / Gen / guidedΔ
+    # E2–E8 STRICT scoring (miss gold span = fail)
     need_data
-    # Default: 4 parallel shards of SAME model, or MODELS="m0 m1 m2 m3"
     MODELS="${MODELS:-qwen3vl qwen3vl qwen3vl qwen3vl}"
     read -r -a M_ARR <<< "$MODELS"
     n="${#GPU_ARR[@]}"
+    DEST_T="${OUT}/news_tables_strict"
+    mkdir -p "$DEST_T"
     for i in "${!GPU_ARR[@]}"; do
       gpu="${GPU_ARR[$i]}"
       m="${M_ARR[$((i % ${#M_ARR[@]}))]}"
       extra=()
       [[ "$LIMIT" != "0" ]] && extra+=(--limit "$LIMIT")
       run_bg "$gpu" "tables_${m}_s${i}of${n}" scripts/run_news_tables.py \
-        --models "$m" --gold "$GOLD" --dest-dir "$OUT/news_tables" \
+        --models "$m" --gold "$GOLD" --dest-dir "$DEST_T" \
         --shard "${i}/${n}" "${extra[@]}"
     done
     wait_all
-    python scripts/score_news_tables.py --dest-dir "$OUT/news_tables"
+    python scripts/score_news_tables.py --dest-dir "$DEST_T"
     python scripts/score_all_tables.py --results-dir "$OUT" --which tables
     ;;
 
@@ -138,7 +139,7 @@ case "$MODE" in
     ;;
 
   score)
-    python scripts/score_news_tables.py --dest-dir "$OUT/news_tables" || true
+    python scripts/score_news_tables.py --dest-dir "$OUT/news_tables_strict" || true
     python scripts/score_all_tables.py --results-dir "$OUT" --which all
     ;;
 

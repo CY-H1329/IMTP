@@ -18,13 +18,20 @@ def _sb() -> Path:
     return Path("/workspace/chanyeong/ICLR/selective_bench")
 
 ROOT = _sb()
-DEST = Path(os.environ.get("NEWS_TABLES_DIR", ROOT / "results" / "news_tables"))
+DEST = Path(os.environ.get("NEWS_TABLES_DIR", ROOT / "results" / "news_tables_strict"))
 
 
 def acc(rows: list[dict], key: str = "ok") -> dict:
     n = len(rows)
     ok = sum(1 for x in rows if x.get(key))
-    return {"n": n, "ok": ok, "acc": (ok / n) if n else None}
+    miss = sum(1 for x in rows if x.get("missing"))
+    return {
+        "n": n,
+        "ok": ok,
+        "acc": (ok / n) if n else None,
+        "missing": miss,
+        "missing_rate": (miss / n) if n else None,
+    }
 
 
 def load_jsonl(path: Path) -> list[dict]:
@@ -118,20 +125,20 @@ def main() -> None:
         kr = dest / f"{slug}.know_rules.json"
         if kr.exists():
             summaries[slug]["know_rules"] = json.loads(kr.read_text())
-    md = ["# News 3000 — Table 1 and Table 3", ""]
+    md = ["# News eval — STRICT scoring (miss gold span = fail)", ""]
     md += [
         "## Table 1. KNOW / Decision / Preserve / ACT / Translation / Generation",
         "",
-        "| Model | n | KNOW-rules | KNOW | Decision | Preserve | ACT | Translation | Generation | KNOW→ACT |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Model | n | KNOW-rules | KNOW | Decision | Preserve | ACT | Translation | Generation | KNOW→ACT | Gen miss% | Guided miss% |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     tex1 = [
         "% Table 1 news_eval",
         "\\begin{table}[t]",
         "\\centering",
         "\\small",
-        "\\caption{Selective translation on the news gold. KNOW-rules = verbal yes/no on N1/N2. KNOW = T/P on gold spans without the image. Decision = T/P with the image. Preserve = gold-P spans. ACT = unguided generation follows T/P. Translation = gold-T span matches the official target. Generation = overall unguided S4. KNOW$\\rightarrow$ACT = gold-P correctly listed at KNOW but rewritten in generation.}",
-        "\\label{tab:news-know-act}",
+        "\\caption{Selective translation on the news gold (STRICT: missing gold span = fail). KNOW-rules = verbal yes/no on N1/N2. KNOW = T/P on gold spans without the image. Decision = T/P with the image. Preserve = gold-P spans. ACT = unguided generation follows T/P. Translation = gold-T span matches the official target. Generation = overall unguided S4. KNOW$\\rightarrow$ACT = gold-P correctly listed at KNOW but rewritten in generation.}",
+        "\\label{tab:news-know-act-strict}",
         "\\begin{tabular}{l r r r r r r r r}",
         "\\toprule",
         "Model & n & KNOW-R & KNOW & Dec. & Pres. & ACT & Trans. & Gen. \\\\",
@@ -144,7 +151,8 @@ def main() -> None:
             f"| {slug} | {s['n_items']} | {fmt(kr_acc)} | {fmt(s['know']['acc'])} | "
             f"{fmt(s['decision']['acc'])} | {fmt(s['preserve']['acc'])} | "
             f"{fmt(s['act']['acc'])} | {fmt(s['translation']['acc'])} | "
-            f"{fmt(s['generation']['acc'])} | {fmt(s['know_to_act']['rate'])} |"
+            f"{fmt(s['generation']['acc'])} | {fmt(s['know_to_act']['rate'])} | "
+            f"{fmt(s['unguided'].get('missing_rate'))} | {fmt(s['guided'].get('missing_rate'))} |"
         )
         slug_tex = slug.replace("_", r"\_")
         tex1.append(
@@ -165,8 +173,8 @@ def main() -> None:
         "\\begin{table}[t]",
         "\\centering",
         "\\small",
-        "\\caption{Generation accuracy (S4) on the news gold inventory. Unguided: localize with no span list. Guided: rules + proper-noun identity + exact TRANSLATE/PRESERVE list (no gold target strings). Same images.}",
-        "\\label{tab:news-guided-vs-unguided}",
+        "\\caption{Generation accuracy (S4) on the news gold inventory (STRICT: missing gold span = fail). Unguided: localize with no span list. Guided: rules + proper-noun identity + exact TRANSLATE/PRESERVE list (no gold target strings). Same images.}",
+        "\\label{tab:news-guided-vs-unguided-strict}",
         "\\begin{tabular}{l r r r r}",
         "\\toprule",
         "Model & n & Unguided & Guided & $\\Delta$ \\\\",

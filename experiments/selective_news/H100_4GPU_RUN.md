@@ -111,7 +111,11 @@ If images missing: fix `NEWS_DATA`. If OOM: lower side is already ~768 in tables
 
 ---
 
-## 5. Run the 10 experiments
+## Scoring
+
+Default for `tables` / `smoke` is **STRICT** (missing gold span = fail).  
+Results under `results/news_tables_strict/`. Progress: `[####----] 120/711 (16.9%)`.
+
 
 | Goal | Command | GPUs | Wall-clock (rough) |
 |---|---|---|---|

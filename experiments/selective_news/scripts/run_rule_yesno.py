@@ -259,11 +259,14 @@ def main():
     Image.new("RGB", (448, 448), "white").save(BLANK)
     rows = all_rules()
     results = []
+    from progress_util import print_progress
+
     for spec in args.models:
         mid = ALIASES.get(spec, spec)
         vlm = LocalVLM(mid, max_side=448, max_new=16)
         recs = []
-        for r in rows:
+        total = len(rows)
+        for i, r in enumerate(rows, 1):
             raw = vlm.generate(BLANK, fill_prompt(r))
             yn = parse_yn(raw)
             recs.append(
@@ -276,7 +279,12 @@ def main():
                     "raw": (raw or "")[:300],
                 }
             )
-            print(f"{mid.split('/')[-1]:20s} {r['id']} expect={r['expect']} pred={yn} raw={raw[:80]!r}", flush=True)
+            print_progress(
+                i,
+                total,
+                prefix=mid.split("/")[-1],
+                extra=f"{r['id']} expect={r['expect']} pred={yn}",
+            )
         vlm.close()
         results.append(
             {

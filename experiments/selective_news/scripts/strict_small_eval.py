@@ -33,6 +33,7 @@ from oracle_guide import (  # noqa: E402
     rules_block,
     similar,
 )
+from progress_util import print_progress  # noqa: E402
 from run_news_tables import (  # noqa: E402
     decision_prompt,
     know_prompt,
@@ -40,96 +41,29 @@ from run_news_tables import (  # noqa: E402
     resolve_image,
 )
 from run_rule_yesno import ALIASES, LocalVLM  # noqa: E402
+from strict_score import (  # noqa: E402
+    item_perfect,
+    match_decision,
+    parse_loose as _parse_loose,
+    score_block_strict as span_acc_raw,
+)
+
+
+def parse_loose(raw: str) -> list[dict]:
+    return _parse_loose(raw, parse_json_items)
+
+
+def span_acc(rows: list[dict]) -> dict:
+    base = span_acc_raw(rows)
+    wrong = sum(1 for r in rows if r.get("matched") and not r.get("ok"))
+    base["wrong_decision"] = wrong
+    return base
+
 
 PROTO = json.loads((ROOT / "gold" / "probe_chain_protocol.json").read_text())
 GOLD = ROOT / "gold" / "news_eval.json"
 DEST = ROOT / "results" / "strict_small"
 BLANK = ROOT / "results" / "_blank.png"
-
-
-def parse_loose(raw: str) -> list[dict]:
-    items = parse_json_items(raw)
-    if items:
-        return items
-    out = []
-    for m in re.finditer(r"\{[^{}]+\}", raw or ""):
-        try:
-            obj = json.loads(m.group(0))
-        except Exception:
-            continue
-        if isinstance(obj, dict) and (obj.get("text") or obj.get("decision")):
-            out.append(obj)
-    return out
-
-
-def match_decision(inv: list[dict], preds: list[dict], check_output: bool = False) -> list[dict]:
-    """Match each gold span. Missing → ok=False. Extra preds ignored."""
-    rows = []
-    for r in inv:
-        pred = None
-        out = None
-        for p in preds:
-            txt = p.get("text") or p.get("span") or ""
-            if similar(txt, r["text"]) or similar(r["text"], txt):
-                d = (p.get("decision") or "").lower()
-                if d in ("translate", "preserve"):
-                    pred = d
-                    out = p.get("output")
-                    break
-        if pred is None:
-            ok = False
-            reason = "missing"
-        elif pred != r["decision"]:
-            ok = False
-            reason = "wrong_decision"
-        elif check_output and r["decision"] == "preserve":
-            # preserve: output must keep source (or equal text)
-            if out is None or out == "":
-                ok = False
-                reason = "preserve_no_output"
-            elif similar(out, r["text"]) or similar(r["text"], str(out)):
-                ok = True
-                reason = "ok"
-            else:
-                ok = False
-                reason = "preserve_rewritten"
-        else:
-            ok = True
-            reason = "ok"
-        rows.append(
-            {
-                "taxonomy": r["taxonomy"],
-                "span": r["text"][:200],
-                "expect": r["decision"],
-                "pred": pred,
-                "output": (str(out)[:120] if out is not None else None),
-                "matched": pred is not None,
-                "missing": pred is None,
-                "ok": ok,
-                "reason": reason,
-            }
-        )
-    return rows
-
-
-def span_acc(rows: list[dict]) -> dict:
-    n = len(rows)
-    ok = sum(1 for r in rows if r.get("ok"))
-    miss = sum(1 for r in rows if r.get("missing"))
-    wrong = sum(1 for r in rows if r.get("matched") and not r.get("ok"))
-    return {
-        "n": n,
-        "ok": ok,
-        "acc": (ok / n) if n else None,
-        "missing": miss,
-        "missing_rate": (miss / n) if n else None,
-        "wrong_decision": wrong,
-    }
-
-
-def item_perfect(rows: list[dict]) -> bool:
-    """All-or-nothing: one miss or wrong → item fail."""
-    return bool(rows) and all(r.get("ok") for r in rows)
 
 
 def subset(rows, expect=None, tax=None):
@@ -228,9 +162,12 @@ def main() -> None:
                     continue
                 inv = inventory(it)
                 img = resolve_image(it["image"], it)
-                print(
-                    f"=== [{i+1}/{len(items)}] {it['id']} spans={len(inv)} ===",
-                    flush=True,
+                done_n = sum(1 for x in items if x["id"] in done) + 1
+                print_progress(
+                    done_n,
+                    len(items),
+                    prefix=slug,
+                    extra=f"{it['id'][:40]} spans={len(inv)}",
                 )
 
                 # Decision (spans listed + image)
