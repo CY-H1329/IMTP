@@ -113,8 +113,9 @@ If images missing: fix `NEWS_DATA`. If OOM: lower side is already ~768 in tables
 
 ## Scoring
 
-Default for `tables` / `smoke` is **STRICT** (missing gold span = fail).  
-Results under `results/news_tables_strict/`. Progress: `[####----] 120/711 (16.9%)`.
+**Decision** = finding alone (image + gold spans listed).  
+**ACT** = unguided vs guided generation: Preserve `output≈source`, Translate `output≈gt_tgt` (no soft free pass).  
+Results → `results/news_tables_act/`. Offline check: `python scripts/test_scoring_offline.py`.
 
 
 | Goal | Command | GPUs | Wall-clock (rough) |

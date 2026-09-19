@@ -37,11 +37,16 @@ from progress_util import print_progress  # noqa: E402
 from run_probe_chain import load_done, parse_tp  # noqa: E402
 from run_rule_yesno import ALIASES, LocalVLM, fill_prompt, parse_yn  # noqa: E402
 from run_rule_yesno import all_rules  # noqa: E402
-from strict_score import match_decision, parse_loose, score_block_strict  # noqa: E402
+from strict_score import (  # noqa: E402
+    parse_loose,
+    score_act,
+    score_block_strict,
+    score_decision_probe,
+)
 
 GOLD = ROOT / "gold" / "news_eval.json"
 PROTO = json.loads((ROOT / "gold" / "probe_chain_protocol.json").read_text())
-DEFAULT_DEST = ROOT / "results" / "news_tables_strict"
+DEFAULT_DEST = ROOT / "results" / "news_tables_act"
 BLANK = ROOT / "results" / "_blank.png"
 
 ALIASES.update(
@@ -118,8 +123,8 @@ def decision_prompt(item: dict, inv: list[dict]) -> str:
 
 
 def match_pred(inv: list[dict], preds: list[dict]) -> list[dict]:
-    """Strict: missing gold span = fail (extras ignored)."""
-    return match_decision(inv, preds, check_output=False)
+    """Decision probe: label only."""
+    return score_decision_probe(inv, preds)
 
 
 def score_block(rows: list[dict]) -> dict:
@@ -132,17 +137,21 @@ def run_item(vlm: LocalVLM, item: dict) -> dict:
     tgt = item.get("tgt_lang") or "ko"
     tgt_n = TGT_NAME.get(tgt, tgt)
 
+    # 1) KNOW — find T/P without image
     raw_k = vlm.generate(BLANK, know_prompt(item, inv), max_new=400)
-    know_rows = match_decision(inv, parse_loose(raw_k, parse_json_items), check_output=False)
+    know_rows = score_decision_probe(inv, parse_loose(raw_k, parse_json_items))
 
+    # 2) Decision — find T/P alone with image (paper primary "finding" metric)
     raw_d = vlm.generate(img, decision_prompt(item, inv), max_new=400)
-    dec_rows = match_decision(inv, parse_loose(raw_d, parse_json_items), check_output=False)
+    dec_rows = score_decision_probe(inv, parse_loose(raw_d, parse_json_items))
 
+    # 3) ACT unguided — localize freely; score preserve/translate execution
     raw_u = vlm.generate(img, PROTO["prompts"]["S4_generate"].format(tgt_n=tgt_n), max_new=500)
-    s4_u = match_decision(inv, parse_loose(raw_u or "", parse_json_items), check_output=True)
+    s4_u = score_act(inv, parse_loose(raw_u or "", parse_json_items), raw=raw_u or "")
 
+    # 4) ACT guided — we give TRANSLATE/PRESERVE lists; score execution only
     raw_g = vlm.generate(img, guided_prompt(item, inv), max_new=500)
-    s4_g = match_decision(inv, parse_loose(raw_g or "", parse_json_items), check_output=True)
+    s4_g = score_act(inv, parse_loose(raw_g or "", parse_json_items), raw=raw_g or "")
 
     def subset(rows, tax=None, expect=None):
         out = rows
@@ -160,15 +169,18 @@ def run_item(vlm: LocalVLM, item: dict) -> dict:
         "image": str(img),
         "src_lang": item.get("src_lang"),
         "tgt_lang": tgt,
-        "scoring": "strict",
+        "scoring": "decision_probe+act_gt",
         "know": know_rows,
         "decision": dec_rows,
         "S4_unguided": s4_u,
         "S4_guided": s4_g,
         "preserve_decision": subset(dec_rows, expect="preserve"),
         "preserve_act_unguided": subset(s4_u, expect="preserve"),
+        "preserve_act_guided": subset(s4_g, expect="preserve"),
         "translate_act_unguided": subset(s4_u, expect="translate"),
+        "translate_act_guided": subset(s4_g, expect="translate"),
         "photo_sign_unguided": subset(s4_u, tax="PHOTO_SIGN"),
+        "photo_sign_guided": subset(s4_g, tax="PHOTO_SIGN"),
         "raw": {
             "know": (raw_k or "")[:2500],
             "decision": (raw_d or "")[:2500],
@@ -219,7 +231,7 @@ def main() -> None:
     dest: Path = args.dest_dir
     dest.mkdir(parents=True, exist_ok=True)
     print(
-        f"news_tables STRICT gold={args.gold} shard={args.shard} n={len(items)} dest={dest}",
+        f"news_tables ACT-scoring gold={args.gold} shard={args.shard} n={len(items)} dest={dest}",
         flush=True,
     )
     for spec in args.models:
@@ -254,10 +266,13 @@ def main() -> None:
                     total,
                     prefix=slug,
                     extra=(
-                        f"{it['id'][:40]} know={ku['ok']}/{ku['n']} "
-                        f"dec={du['ok']}/{du['n']} "
-                        f"S4u={su['ok']}/{su['n']}(miss{su.get('missing',0)}) "
-                        f"S4g={sg['ok']}/{sg['n']}(miss{sg.get('missing',0)})"
+                        f"{it['id'][:36]} Dec={du['ok']}/{du['n']} "
+                        f"ACT-P u/g={sum(1 for x in rec['preserve_act_unguided'] if x.get('ok'))}/"
+                        f"{sum(1 for x in rec['preserve_act_guided'] if x.get('ok'))} "
+                        f"ACT-T u/g="
+                        f"{sum(1 for x in rec['translate_act_unguided'] if x.get('matched_gt_tgt'))}/"
+                        f"{sum(1 for x in rec['translate_act_guided'] if x.get('matched_gt_tgt'))}"
+                        f" missU={su.get('missing',0)} missG={sg.get('missing',0)}"
                     ),
                 )
         vlm.close()

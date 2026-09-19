@@ -30,12 +30,16 @@ Gold spans + `gt_tgt` are **frozen**. Do not hand-edit masthead/logo labels.
 - Images: prefer `NEWS_DATA=.../hf_news_pack` (`crops/<article_id>/<lang>.png`). Absolute paths inside gold are remapped automatically via `scripts/paths_util.py`.
 - Pack build (on the machine that has the corpus): `python scripts/build_hf_news_pack.py` (paths inside that script may need editing once).
 
-## Scoring (default = STRICT)
+## Scoring (paper)
 
-Missing any gold span in the model JSON = **fail** for that span. Extra spans ignored.
-Soft blob `score_gen` is no longer used for Table 1/3. Outputs go to `results/news_tables_strict/`.
+Two questions, two scorers:
 
-Progress logs look like: `[####------] 120/711 (16.9%)`.
+1. **Decision** (KNOW / Decision columns): model finds TRANSLATE vs PRESERVE alone on listed gold spans. Guided inventory is **not** used here.
+2. **ACT** (unguided vs guided generation): Preserve OK ⇔ `output≈source`. Translate OK ⇔ `output≈official gt_tgt`. Missing span = fail. Keeping source on a translate span = fail (no soft free pass).
+
+Guided tells the model the TRANSLATE/PRESERVE lists → Decision is given; we measure **execution** (ACT-P / ACT-T). Primary Δ: guided ACT − unguided ACT.
+
+Results: `results/news_tables_act/`. Progress: `[####----] 120/711 (16.9%)`.
 
 
 | # | Name | What it measures | How to run |

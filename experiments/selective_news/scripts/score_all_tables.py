@@ -54,7 +54,9 @@ def score_e1(results: Path, out: Path) -> str:
 
 
 def score_tables(results: Path, out: Path) -> str:
-    src = results / "news_tables_strict"
+    src = results / "news_tables_act"
+    if not (src / "summary.json").exists():
+        src = results / "news_tables_strict"
     if not (src / "summary.json").exists():
         src = results / "news_tables"
     summary = load_json(src / "summary.json")

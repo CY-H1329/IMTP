@@ -14,7 +14,7 @@ IFS=',' read -r -a GPU_ARR <<< "$GPUS"
 GOLD="${GOLD:-$SN_ROOT/gold/news_eval.json}"
 OUT="${OUT:-$SN_ROOT/results}"
 LOG="$SN_ROOT/logs"
-mkdir -p "$OUT" "$LOG" "$OUT/news_tables_strict" "$OUT/bind_method" "$OUT/lang" "$OUT/strict_small" "$OUT/rule_yesno"
+mkdir -p "$OUT" "$LOG" "$OUT/news_tables_act" "$OUT/bind_method" "$OUT/lang" "$OUT/strict_small" "$OUT/rule_yesno"
 MODE="${1:-smoke}"
 LIMIT="${LIMIT:-0}"   # 0 = all articles
 
@@ -70,12 +70,12 @@ case "$MODE" in
     ;;
 
   tables)
-    # E2–E8 STRICT scoring (miss gold span = fail)
+    # E2–E8: Decision probe + ACT (preserve / translate@gt); guided = execution
     need_data
     MODELS="${MODELS:-qwen3vl qwen3vl qwen3vl qwen3vl}"
     read -r -a M_ARR <<< "$MODELS"
     n="${#GPU_ARR[@]}"
-    DEST_T="${OUT}/news_tables_strict"
+    DEST_T="${OUT}/news_tables_act"
     mkdir -p "$DEST_T"
     for i in "${!GPU_ARR[@]}"; do
       gpu="${GPU_ARR[$i]}"
@@ -139,7 +139,7 @@ case "$MODE" in
     ;;
 
   score)
-    python scripts/score_news_tables.py --dest-dir "$OUT/news_tables_strict" || true
+    python scripts/score_news_tables.py --dest-dir "$OUT/news_tables_act" || true
     python scripts/score_all_tables.py --results-dir "$OUT" --which all
     ;;
 

@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
-"""Score news Table 1 + Table 3 JSONL into markdown/latex."""
+"""Score news tables with Decision probe + ACT (preserve / translate@gt).
+
+Paper-facing metrics:
+  - Decision: alone, with image, gold spans listed (finding)
+  - Preserve@Decision
+  - ACT-Preserve unguided vs guided (did they keep PHOTO_SIGN etc.)
+  - ACT-Translate unguided vs guided (output ≈ official gt_tgt)
+  - Δ guided − unguided on ACT-P and ACT-T
+"""
 from __future__ import annotations
 
 import json
-from collections import defaultdict
+import os
 from pathlib import Path
 
-import os
 
 def _sb() -> Path:
     e = os.environ.get("SELECTIVE_BENCH_ROOT")
@@ -17,8 +24,9 @@ def _sb() -> Path:
         return here
     return Path("/workspace/chanyeong/ICLR/selective_bench")
 
+
 ROOT = _sb()
-DEST = Path(os.environ.get("NEWS_TABLES_DIR", ROOT / "results" / "news_tables_strict"))
+DEST = Path(os.environ.get("NEWS_TABLES_DIR", ROOT / "results" / "news_tables_act"))
 
 
 def acc(rows: list[dict], key: str = "ok") -> dict:
@@ -67,38 +75,68 @@ def summarize(rows: list[dict]) -> dict:
     dec = [x for r in rows for x in r.get("decision") or []]
     s4u = [x for r in rows for x in r.get("S4_unguided") or []]
     s4g = [x for r in rows for x in r.get("S4_guided") or []]
+
     preserve_d = [x for x in dec if x.get("expect") == "preserve"]
-    preserve_a = [x for x in s4u if x.get("expect") == "preserve"]
-    trans_a = [x for x in s4u if x.get("expect") == "translate"]
-    trans_ok_tgt = [x for x in trans_a if x.get("matched_gt_tgt")]
-    photo = [x for x in s4u if x.get("taxonomy") == "PHOTO_SIGN"]
-    # KNOW→ACT: gold-P known as preserve but rewritten in generation
-    know_p_ok = {(r.get("id"), x["span"]) for r in rows for x in r.get("know") or [] if x.get("expect") == "preserve" and x.get("ok")}
-    act_p_bad = 0
-    act_p_n = 0
+    pu = [x for x in s4u if x.get("expect") == "preserve"]
+    pg = [x for x in s4g if x.get("expect") == "preserve"]
+    tu = [x for x in s4u if x.get("expect") == "translate"]
+    tg = [x for x in s4g if x.get("expect") == "translate"]
+
+    def tgt_acc(xs):
+        n = len(xs)
+        ok = sum(1 for x in xs if x.get("matched_gt_tgt"))
+        return {"n": n, "ok": ok, "acc": (ok / n) if n else None}
+
+    au = acc(s4u)
+    ag = acc(s4g)
+    ap_u, ap_g = acc(pu), acc(pg)
+    at_u, at_g = tgt_acc(tu), tgt_acc(tg)
+
+    def delta(a, b):
+        if a is None or b is None:
+            return None
+        return a - b
+
+    # KNOW→ACT gap on preserve (knew at KNOW but failed ACT unguided)
+    know_p_ok = {
+        (r.get("id"), x["span"])
+        for r in rows
+        for x in r.get("know") or []
+        if x.get("expect") == "preserve" and x.get("ok")
+    }
+    gap = n_gap = 0
     for r in rows:
         for x in r.get("S4_unguided") or []:
             if x.get("expect") != "preserve":
                 continue
-            act_p_n += 1
+            n_gap += 1
             if (r.get("id"), x.get("span")) in know_p_ok and not x.get("ok"):
-                act_p_bad += 1
-    u = acc(s4u)
-    g = acc(s4g)
+                gap += 1
+
     return {
         "n_items": len(rows),
+        "scoring": "decision_probe+act_gt",
         "know": acc(know),
         "decision": acc(dec),
+        "preserve_decision": acc(preserve_d),
+        "act_preserve_unguided": ap_u,
+        "act_preserve_guided": ap_g,
+        "act_translate_unguided": at_u,
+        "act_translate_guided": at_g,
+        "delta_preserve": delta(ap_g["acc"], ap_u["acc"]),
+        "delta_translate": delta(at_g["acc"], at_u["acc"]),
+        "act_unguided": au,
+        "act_guided": ag,
+        "delta_act": delta(ag["acc"], au["acc"]),
+        "know_to_act": {"n": n_gap, "gap": gap, "rate": (gap / n_gap) if n_gap else None},
+        # aliases for older paper_tables helpers
         "preserve": acc(preserve_d),
-        "act": acc(s4u),
-        "preserve_act": acc(preserve_a),
-        "translation": {"n": len(trans_a), "ok": len(trans_ok_tgt), "acc": (len(trans_ok_tgt) / len(trans_a)) if trans_a else None},
-        "generation": u,
-        "photo_sign": acc(photo),
-        "know_to_act": {"n": act_p_n, "gap": act_p_bad, "rate": (act_p_bad / act_p_n) if act_p_n else None},
-        "unguided": u,
-        "guided": g,
-        "delta": (g["acc"] - u["acc"]) if (g["acc"] is not None and u["acc"] is not None) else None,
+        "translation": at_u,
+        "generation": au,
+        "unguided": au,
+        "guided": ag,
+        "delta": delta(ag["acc"], au["acc"]),
+        "act": au,
     }
 
 
@@ -114,7 +152,13 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dest-dir", type=Path, default=DEST)
     dest = ap.parse_args().dest_dir
-    slugs = sorted({p.name.split(".shard")[0].replace(".jsonl", "") for p in dest.glob("*.jsonl") if not p.name.startswith("_")})
+    slugs = sorted(
+        {
+            p.name.split(".shard")[0].replace(".jsonl", "")
+            for p in dest.glob("*.jsonl")
+            if not p.name.startswith("_")
+        }
+    )
     slugs = [s for s in slugs if s]
     summaries = {}
     for slug in slugs:
@@ -125,77 +169,96 @@ def main() -> None:
         kr = dest / f"{slug}.know_rules.json"
         if kr.exists():
             summaries[slug]["know_rules"] = json.loads(kr.read_text())
-    md = ["# News eval — STRICT scoring (miss gold span = fail)", ""]
-    md += [
-        "## Table 1. KNOW / Decision / Preserve / ACT / Translation / Generation",
+
+    md = [
+        "# News selective translation — Decision + ACT",
         "",
-        "| Model | n | KNOW-rules | KNOW | Decision | Preserve | ACT | Translation | Generation | KNOW→ACT | Gen miss% | Guided miss% |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
-    ]
-    tex1 = [
-        "% Table 1 news_eval",
-        "\\begin{table}[t]",
-        "\\centering",
-        "\\small",
-        "\\caption{Selective translation on the news gold (STRICT: missing gold span = fail). KNOW-rules = verbal yes/no on N1/N2. KNOW = T/P on gold spans without the image. Decision = T/P with the image. Preserve = gold-P spans. ACT = unguided generation follows T/P. Translation = gold-T span matches the official target. Generation = overall unguided S4. KNOW$\\rightarrow$ACT = gold-P correctly listed at KNOW but rewritten in generation.}",
-        "\\label{tab:news-know-act-strict}",
-        "\\begin{tabular}{l r r r r r r r r}",
-        "\\toprule",
-        "Model & n & KNOW-R & KNOW & Dec. & Pres. & ACT & Trans. & Gen. \\\\",
-        "\\midrule",
-    ]
-    for slug, s in summaries.items():
-        kr = s.get("know_rules") or {}
-        kr_acc = (kr["n_ok"] / kr["n"]) if kr.get("n") else None
-        md.append(
-            f"| {slug} | {s['n_items']} | {fmt(kr_acc)} | {fmt(s['know']['acc'])} | "
-            f"{fmt(s['decision']['acc'])} | {fmt(s['preserve']['acc'])} | "
-            f"{fmt(s['act']['acc'])} | {fmt(s['translation']['acc'])} | "
-            f"{fmt(s['generation']['acc'])} | {fmt(s['know_to_act']['rate'])} | "
-            f"{fmt(s['unguided'].get('missing_rate'))} | {fmt(s['guided'].get('missing_rate'))} |"
-        )
-        slug_tex = slug.replace("_", r"\_")
-        tex1.append(
-            f"{slug_tex} & {s['n_items']} & {fmt(kr_acc)} & {fmt(s['know']['acc'])} & "
-            f"{fmt(s['decision']['acc'])} & {fmt(s['preserve']['acc'])} & {fmt(s['act']['acc'])} & "
-            f"{fmt(s['translation']['acc'])} & {fmt(s['generation']['acc'])} \\\\"
-        )
-    tex1 += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
-    md += [
+        "Decision = alone with image (finding). Guided does **not** use Decision for the claim;",
+        "guided ACT = execution given TRANSLATE/PRESERVE lists. Translate OK = output≈gt_tgt.",
         "",
-        "## Table 3. Guided vs unguided S4",
+        "## Table A. Finding (Decision probe)",
         "",
-        "| Model | n | Unguided | Guided | $\\Delta$ |",
+        "| Model | n | KNOW | Decision | Preserve@Dec |",
         "|---|---:|---:|---:|---:|",
     ]
-    tex3 = [
-        "% Table 3 guided vs unguided",
-        "\\begin{table}[t]",
-        "\\centering",
-        "\\small",
-        "\\caption{Generation accuracy (S4) on the news gold inventory (STRICT: missing gold span = fail). Unguided: localize with no span list. Guided: rules + proper-noun identity + exact TRANSLATE/PRESERVE list (no gold target strings). Same images.}",
-        "\\label{tab:news-guided-vs-unguided-strict}",
-        "\\begin{tabular}{l r r r r}",
-        "\\toprule",
-        "Model & n & Unguided & Guided & $\\Delta$ \\\\",
+    for slug, s in summaries.items():
+        md.append(
+            f"| {slug} | {s['n_items']} | {fmt(s['know']['acc'])} | "
+            f"{fmt(s['decision']['acc'])} | {fmt(s['preserve_decision']['acc'])} |"
+        )
+
+    md += [
+        "",
+        "## Table B. ACT: unguided vs guided (what matters for Δ)",
+        "",
+        "| Model | ACT-P unguided | ACT-P guided | ΔP | ACT-T unguided | ACT-T guided | ΔT |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for slug, s in summaries.items():
+        md.append(
+            f"| {slug} | {fmt(s['act_preserve_unguided']['acc'])} | "
+            f"{fmt(s['act_preserve_guided']['acc'])} | {fmt(s['delta_preserve'])} | "
+            f"{fmt(s['act_translate_unguided']['acc'])} | "
+            f"{fmt(s['act_translate_guided']['acc'])} | {fmt(s['delta_translate'])} |"
+        )
+
+    tex_a = [
+        "% Table Decision probe",
+        "\\begin{table}[t]\\centering\\small",
+        "\\caption{Finding: KNOW (no image) and Decision (with image) on gold spans. "
+        "Guided inventory is not used in this table.}",
+        "\\label{tab:news-decision}",
+        "\\begin{tabular}{l r r r r}\\toprule",
+        "Model & n & KNOW & Decision & Pres.@Dec \\\\",
         "\\midrule",
     ]
     for slug, s in summaries.items():
-        d = s["delta"]
-        md.append(f"| {slug} | {s['n_items']} | {fmt(s['unguided']['acc'])} | {fmt(s['guided']['acc'])} | {fmt(d)} |")
-        slug_tex = slug.replace("_", r"\_")
-        tex3.append(
-            f"{slug_tex} & {s['n_items']} & {fmt(s['unguided']['acc'])} & "
-            f"{fmt(s['guided']['acc'])} & {fmt(d)} \\\\"
+        tex_a.append(
+            f"{slug.replace('_', r'_')} & {s['n_items']} & {fmt(s['know']['acc'])} & "
+            f"{fmt(s['decision']['acc'])} & {fmt(s['preserve_decision']['acc'])} \\\\"
         )
-    tex3 += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
+    tex_a += ["\\bottomrule\\end{tabular}\\end{table}", ""]
+
+    tex_b = [
+        "% Table ACT unguided vs guided",
+        "\\begin{table}[t]\\centering\\small",
+        "\\caption{ACT execution. Preserve: output$\\approx$source. Translate: output$\\approx$official target. "
+        "Guided receives the TRANSLATE/PRESERVE lists (finding given); unguided must discover and act.}",
+        "\\label{tab:news-act-guided}",
+        "\\begin{tabular}{l r r r r r r}\\toprule",
+        "Model & P-ung & P-g & $\\Delta$P & T-ung & T-g & $\\Delta$T \\\\",
+        "\\midrule",
+    ]
+    for slug, s in summaries.items():
+        tex_b.append(
+            f"{slug.replace('_', r'_')} & {fmt(s['act_preserve_unguided']['acc'])} & "
+            f"{fmt(s['act_preserve_guided']['acc'])} & {fmt(s['delta_preserve'])} & "
+            f"{fmt(s['act_translate_unguided']['acc'])} & "
+            f"{fmt(s['act_translate_guided']['acc'])} & {fmt(s['delta_translate'])} \\\\"
+        )
+    tex_b += ["\\bottomrule\\end{tabular}\\end{table}", ""]
+
+    dest.mkdir(parents=True, exist_ok=True)
     (dest / "tables.md").write_text("\n".join(md) + "\n", encoding="utf-8")
-    (dest / "table1.tex").write_text("\n".join(tex1), encoding="utf-8")
-    (dest / "table3.tex").write_text("\n".join(tex3), encoding="utf-8")
+    (dest / "table_decision.tex").write_text("\n".join(tex_a), encoding="utf-8")
+    (dest / "table_act.tex").write_text("\n".join(tex_b), encoding="utf-8")
+    # keep old names as copies for run_4gpu score helpers
+    (dest / "table1.tex").write_text("\n".join(tex_a), encoding="utf-8")
+    (dest / "table3.tex").write_text("\n".join(tex_b), encoding="utf-8")
     (dest / "summary.json").write_text(json.dumps(summaries, ensure_ascii=False, indent=2), encoding="utf-8")
     print("wrote", dest / "tables.md")
     for slug, s in summaries.items():
-        print(slug, "n", s["n_items"], "unguided", s["unguided"]["acc"], "guided", s["guided"]["acc"], "delta", s["delta"])
+        print(
+            slug,
+            "n",
+            s["n_items"],
+            "Dec",
+            s["decision"]["acc"],
+            "ΔP",
+            s["delta_preserve"],
+            "ΔT",
+            s["delta_translate"],
+        )
 
 
 if __name__ == "__main__":
