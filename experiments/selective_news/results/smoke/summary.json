@@ -1,0 +1,142 @@
+{
+  "Qwen3-VL-8B-Instruct": {
+    "n_items": 4,
+    "scoring": "decision_probe+act_gt+item_perfect",
+    "know": {
+      "n": 16,
+      "ok": 12,
+      "acc": 0.75,
+      "missing": 0,
+      "missing_rate": 0.0
+    },
+    "decision": {
+      "n": 16,
+      "ok": 12,
+      "acc": 0.75,
+      "missing": 0,
+      "missing_rate": 0.0
+    },
+    "decision_item": {
+      "n": 4,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "preserve_decision": {
+      "n": 4,
+      "ok": 4,
+      "acc": 1.0,
+      "missing": 0,
+      "missing_rate": 0.0
+    },
+    "act_item_unguided": {
+      "n": 4,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "act_item_guided": {
+      "n": 4,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "delta_act_item": 0.0,
+    "act_preserve_unguided": {
+      "n": 4,
+      "ok": 3,
+      "acc": 0.75,
+      "missing": 1,
+      "missing_rate": 0.25
+    },
+    "act_preserve_guided": {
+      "n": 4,
+      "ok": 4,
+      "acc": 1.0,
+      "missing": 0,
+      "missing_rate": 0.0
+    },
+    "act_translate_unguided": {
+      "n": 12,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "act_translate_guided": {
+      "n": 12,
+      "ok": 1,
+      "acc": 0.08333333333333333
+    },
+    "delta_preserve": 0.25,
+    "delta_translate": 0.08333333333333333,
+    "act_unguided": {
+      "n": 16,
+      "ok": 3,
+      "acc": 0.1875,
+      "missing": 5,
+      "missing_rate": 0.3125
+    },
+    "act_guided": {
+      "n": 16,
+      "ok": 5,
+      "acc": 0.3125,
+      "missing": 0,
+      "missing_rate": 0.0
+    },
+    "delta_act": 0.125,
+    "know_to_act": {
+      "n": 4,
+      "gap": 1,
+      "rate": 0.25
+    },
+    "preserve": {
+      "n": 4,
+      "ok": 4,
+      "acc": 1.0,
+      "missing": 0,
+      "missing_rate": 0.0
+    },
+    "translation": {
+      "n": 12,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "generation": {
+      "n": 4,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "unguided": {
+      "n": 4,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "guided": {
+      "n": 4,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "delta": 0.0,
+    "act": {
+      "n": 4,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "know_rules": {
+      "n_ok": 2,
+      "n": 2,
+      "items": [
+        {
+          "id": "N1",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "N2",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        }
+      ]
+    }
+  }
+}

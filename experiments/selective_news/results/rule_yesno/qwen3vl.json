@@ -1,0 +1,93 @@
+{
+  "prompt_version": "explained+examples",
+  "models": [
+    {
+      "model": "Qwen/Qwen3-VL-8B-Instruct",
+      "prompt_version": "explained+examples",
+      "n_ok": 8,
+      "n": 10,
+      "items": [
+        {
+          "id": "A1",
+          "split": "ads",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "A2",
+          "split": "ads",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "A3",
+          "split": "ads",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "A4",
+          "split": "ads",
+          "expect": "YES",
+          "pred": "NO",
+          "ok": false,
+          "raw": "NO"
+        },
+        {
+          "id": "A5",
+          "split": "ads",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "C1",
+          "split": "video",
+          "expect": "YES",
+          "pred": "NO",
+          "ok": false,
+          "raw": "NO"
+        },
+        {
+          "id": "C2",
+          "split": "video",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "C3",
+          "split": "video",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "N1",
+          "split": "news",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "N2",
+          "split": "news",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        }
+      ]
+    }
+  ]
+}

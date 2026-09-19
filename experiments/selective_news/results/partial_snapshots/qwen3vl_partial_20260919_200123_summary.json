@@ -1,0 +1,142 @@
+{
+  "Qwen3-VL-8B-Instruct": {
+    "n_items": 962,
+    "scoring": "decision_probe+act_gt+item_perfect",
+    "know": {
+      "n": 3848,
+      "ok": 2964,
+      "acc": 0.7702702702702703,
+      "missing": 8,
+      "missing_rate": 0.002079002079002079
+    },
+    "decision": {
+      "n": 3848,
+      "ok": 2839,
+      "acc": 0.7377858627858628,
+      "missing": 93,
+      "missing_rate": 0.02416839916839917
+    },
+    "decision_item": {
+      "n": 962,
+      "ok": 21,
+      "acc": 0.02182952182952183
+    },
+    "preserve_decision": {
+      "n": 962,
+      "ok": 933,
+      "acc": 0.9698544698544699,
+      "missing": 29,
+      "missing_rate": 0.030145530145530147
+    },
+    "act_item_unguided": {
+      "n": 962,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "act_item_guided": {
+      "n": 962,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "delta_act_item": 0.0,
+    "act_preserve_unguided": {
+      "n": 962,
+      "ok": 254,
+      "acc": 0.26403326403326405,
+      "missing": 689,
+      "missing_rate": 0.7162162162162162
+    },
+    "act_preserve_guided": {
+      "n": 962,
+      "ok": 922,
+      "acc": 0.9584199584199584,
+      "missing": 40,
+      "missing_rate": 0.04158004158004158
+    },
+    "act_translate_unguided": {
+      "n": 2886,
+      "ok": 70,
+      "acc": 0.024255024255024255
+    },
+    "act_translate_guided": {
+      "n": 2886,
+      "ok": 79,
+      "acc": 0.027373527373527374
+    },
+    "delta_preserve": 0.6943866943866943,
+    "delta_translate": 0.0031185031185031187,
+    "act_unguided": {
+      "n": 3848,
+      "ok": 324,
+      "acc": 0.0841995841995842,
+      "missing": 2049,
+      "missing_rate": 0.5324844074844075
+    },
+    "act_guided": {
+      "n": 3848,
+      "ok": 1001,
+      "acc": 0.26013513513513514,
+      "missing": 129,
+      "missing_rate": 0.033523908523908526
+    },
+    "delta_act": 0.17593555093555094,
+    "know_to_act": {
+      "n": 962,
+      "gap": 705,
+      "rate": 0.7328482328482329
+    },
+    "preserve": {
+      "n": 962,
+      "ok": 933,
+      "acc": 0.9698544698544699,
+      "missing": 29,
+      "missing_rate": 0.030145530145530147
+    },
+    "translation": {
+      "n": 2886,
+      "ok": 70,
+      "acc": 0.024255024255024255
+    },
+    "generation": {
+      "n": 962,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "unguided": {
+      "n": 962,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "guided": {
+      "n": 962,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "delta": 0.0,
+    "act": {
+      "n": 962,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "know_rules": {
+      "n_ok": 2,
+      "n": 2,
+      "items": [
+        {
+          "id": "N1",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "N2",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        }
+      ]
+    }
+  }
+}

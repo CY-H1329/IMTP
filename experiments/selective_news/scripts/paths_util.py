@@ -12,24 +12,24 @@ def sb_root() -> Path:
     if e:
         return Path(e)
     here = Path(__file__).resolve().parent.parent
-    if (here / "gold").exists():
+    if _exists(here / "gold"):
         return here
     for p in (
         Path("/workspace/chanyeong/ICLR/selective_bench"),
         Path("/root/Desktop/workspace/chanyeong/ICLR/selective_bench"),
     ):
-        if (p / "gold").exists():
+        if _exists(p / "gold"):
             return p
     return here
 
 
 def news_data_root() -> Path | None:
     e = os.environ.get("NEWS_DATA")
-    if e and Path(e).exists():
+    if e and _exists(Path(e)):
         return Path(e)
     root = sb_root()
     for cand in (root / "data" / "hf_news_pack", root / "data"):
-        if cand.exists():
+        if _exists(cand):
             return cand
     return None
 
@@ -52,11 +52,20 @@ def _remap_workspace(p: str) -> list[Path]:
     return out
 
 
+
+def _exists(path: Path) -> bool:
+    """exists() that treats PermissionError as missing (e.g. /root on shared hosts)."""
+    try:
+        return path.exists()
+    except OSError:
+        return False
+
+
 def resolve_image(p: str, article_id: str | None = None, src_lang: str | None = None) -> Path:
     """Resolve gold image path against NEWS_DATA / hf_news_pack / local corpus."""
     raw = str(p)
     for c in _remap_workspace(raw):
-        if c.exists():
+        if _exists(c):
             return c
 
     nd = news_data_root()
@@ -68,7 +77,7 @@ def resolve_image(p: str, article_id: str | None = None, src_lang: str | None = 
     m = _PACK_RE.search(raw.replace("\\", "/"))
     if m and nd:
         cand = nd / "crops" / m.group("aid") / f"{m.group('lang').lower()}.png"
-        if cand.exists():
+        if _exists(cand):
             return cand
 
     # Absolute corpus → pack layout crops/<source>_<eid>/<lang>.png
@@ -79,18 +88,18 @@ def resolve_image(p: str, article_id: str | None = None, src_lang: str | None = 
             clang = "ja"
         aid = article_id or f"{source}_{eid}"
         if nd:
-            for base in (nd, nd / "hf_news_pack" if (nd / "hf_news_pack").exists() else nd):
+            for base in (nd, nd / "hf_news_pack" if _exists(nd / "hf_news_pack") else nd):
                 cand = base / "crops" / aid / f"{clang}.png"
-                if cand.exists():
+                if _exists(cand):
                     return cand
                 # also try eid-only folder names used in some snapshots
                 cand2 = base / "crops" / source / eid / f"{clang}.png"
-                if cand2.exists():
+                if _exists(cand2):
                     return cand2
 
     if article_id and nd:
         cand = nd / "crops" / article_id / f"{lang}.png"
-        if cand.exists():
+        if _exists(cand):
             return cand
 
     return Path(raw)

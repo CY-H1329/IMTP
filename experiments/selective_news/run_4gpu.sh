@@ -17,6 +17,9 @@ LOG="$SN_ROOT/logs"
 mkdir -p "$OUT" "$LOG" "$OUT/news_tables_act" "$OUT/bind_method" "$OUT/lang" "$OUT/strict_small" "$OUT/rule_yesno"
 MODE="${1:-smoke}"
 LIMIT="${LIMIT:-0}"   # 0 = all articles
+# Pack N inference workers per physical GPU (tables). 2 fits ~18GB×2 on H100 80GB for 8B VLMs.
+# Large models (qwen38 / gemma27): export WORKERS_PER_GPU=1
+WORKERS_PER_GPU="${WORKERS_PER_GPU:-2}"
 
 need_data() {
   if [[ -z "${NEWS_DATA:-}" ]]; then
@@ -71,14 +74,19 @@ case "$MODE" in
 
   tables)
     # E2–E8: Decision probe + ACT (preserve / translate@gt); guided = execution
+    # WORKERS_PER_GPU (default 2): launch N shards per physical GPU → better H100 util for 8B.
     need_data
     MODELS="${MODELS:-qwen3vl qwen3vl qwen3vl qwen3vl}"
     read -r -a M_ARR <<< "$MODELS"
-    n="${#GPU_ARR[@]}"
+    n_gpu="${#GPU_ARR[@]}"
+    wpg=$((WORKERS_PER_GPU + 0))
+    if [[ "$wpg" -lt 1 ]]; then wpg=1; fi
+    n=$((n_gpu * wpg))
     DEST_T="${OUT}/news_tables_act"
     mkdir -p "$DEST_T"
-    for i in "${!GPU_ARR[@]}"; do
-      gpu="${GPU_ARR[$i]}"
+    echo "[tables] GPUs=${GPUS} workers_per_gpu=${wpg} shards=${n} models=${MODELS}"
+    for ((i=0; i<n; i++)); do
+      gpu="${GPU_ARR[$((i % n_gpu))]}"
       m="${M_ARR[$((i % ${#M_ARR[@]}))]}"
       extra=()
       [[ "$LIMIT" != "0" ]] && extra+=(--limit "$LIMIT")

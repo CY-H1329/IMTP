@@ -131,6 +131,10 @@ Results → `results/news_tables_act/`. Offline check: `python scripts/test_scor
 ### Useful knobs
 
 ```bash
+# Pack 2 workers per GPU for tables (default). Use 1 for large models.
+# WORKERS_PER_GPU=2 ./run_4gpu.sh tables   # 8 shards on 4 GPUs
+# WORKERS_PER_GPU=1 MODELS="qwen38 qwen38 qwen38 qwen38" ./run_4gpu.sh tables
+
 # Cap articles while debugging tables
 LIMIT=32 ./run_4gpu.sh tables
 

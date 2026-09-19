@@ -1,0 +1,5 @@
+     249 results/news_tables_act/Qwen3-VL-8B-Instruct.shard0of4.jsonl
+     253 results/news_tables_act/Qwen3-VL-8B-Instruct.shard1of4.jsonl
+     231 results/news_tables_act/Qwen3-VL-8B-Instruct.shard2of4.jsonl
+     229 results/news_tables_act/Qwen3-VL-8B-Instruct.shard3of4.jsonl
+     962 total

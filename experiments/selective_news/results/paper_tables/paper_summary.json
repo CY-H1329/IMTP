@@ -1,0 +1,142 @@
+{
+  "Qwen3-VL-8B-Instruct": {
+    "n_items": 2841,
+    "scoring": "decision_probe+act_gt+item_perfect",
+    "know": {
+      "n": 11364,
+      "ok": 8683,
+      "acc": 0.7640795494544175,
+      "missing": 11,
+      "missing_rate": 0.0009679690249912002
+    },
+    "decision": {
+      "n": 11364,
+      "ok": 8540,
+      "acc": 0.7514959521295319,
+      "missing": 280,
+      "missing_rate": 0.024639211545230553
+    },
+    "decision_item": {
+      "n": 2841,
+      "ok": 226,
+      "acc": 0.07954945441745864
+    },
+    "preserve_decision": {
+      "n": 2841,
+      "ok": 2756,
+      "acc": 0.970080957409363,
+      "missing": 80,
+      "missing_rate": 0.028159098908834918
+    },
+    "act_item_unguided": {
+      "n": 2841,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "act_item_guided": {
+      "n": 2841,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "delta_act_item": 0.0,
+    "act_preserve_unguided": {
+      "n": 2841,
+      "ok": 307,
+      "acc": 0.10806054206265399,
+      "missing": 2509,
+      "missing_rate": 0.8831397395283351
+    },
+    "act_preserve_guided": {
+      "n": 2841,
+      "ok": 2575,
+      "acc": 0.9063709961281239,
+      "missing": 260,
+      "missing_rate": 0.09151707145371347
+    },
+    "act_translate_unguided": {
+      "n": 8523,
+      "ok": 96,
+      "acc": 0.011263639563533967
+    },
+    "act_translate_guided": {
+      "n": 8523,
+      "ok": 453,
+      "acc": 0.05315029919042591
+    },
+    "delta_preserve": 0.7983104540654699,
+    "delta_translate": 0.04188665962689194,
+    "act_unguided": {
+      "n": 11364,
+      "ok": 403,
+      "acc": 0.03546286518831397,
+      "missing": 7606,
+      "missing_rate": 0.6693065821893699
+    },
+    "act_guided": {
+      "n": 11364,
+      "ok": 3028,
+      "acc": 0.26645547342485043,
+      "missing": 808,
+      "missing_rate": 0.07110172474480816
+    },
+    "delta_act": 0.23099260823653645,
+    "know_to_act": {
+      "n": 2841,
+      "gap": 2525,
+      "rate": 0.8887715593101021
+    },
+    "preserve": {
+      "n": 2841,
+      "ok": 2756,
+      "acc": 0.970080957409363,
+      "missing": 80,
+      "missing_rate": 0.028159098908834918
+    },
+    "translation": {
+      "n": 8523,
+      "ok": 96,
+      "acc": 0.011263639563533967
+    },
+    "generation": {
+      "n": 2841,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "unguided": {
+      "n": 2841,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "guided": {
+      "n": 2841,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "delta": 0.0,
+    "act": {
+      "n": 2841,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "know_rules": {
+      "n_ok": 2,
+      "n": 2,
+      "items": [
+        {
+          "id": "N1",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "N2",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        }
+      ]
+    }
+  }
+}

@@ -239,7 +239,11 @@ def main() -> None:
         slug = mid.split("/")[-1].replace(" ", "_")
         outp = dest / f"{slug}.shard{shard_i}of{shard_n}.jsonl"
         rules_p = dest / f"{slug}.know_rules.json"
-        done = load_done(outp)
+        # Resume across shard layouts (e.g. 4-way -> 8-way packing)
+        done = set()
+        for prev in dest.glob(f"{slug}.shard*.jsonl"):
+            done |= load_done(prev)
+        done |= load_done(outp)
         vlm = LocalVLM(mid, max_side=768, max_new=500)
         if not rules_p.exists():
             kr = run_know_rules(vlm)
