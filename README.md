@@ -1,28 +1,38 @@
-# IMTP — Open-source IIMT Experiment Harness
+# IMTP — Open-source IIMT + Selective News Experiment Harness
 
-H100-ready harness for Image-to-Image Machine Translation (IIMT) baselines and evaluation.
+H100-ready harnesses for:
 
-## Quick start (H100 JupyterLab)
+1. **IIMT baselines** — `experiments/iimt/` (AnyTrans / Translatotron-V / PRIM, …)
+2. **Selective translation (news)** — `experiments/selective_news/` (KNOW / Decision / Preserve / guidedΔ / Method1)
+
+## Quick start — selective news (4× GPU)
 
 ```bash
 cd ~
 git clone https://github.com/CY-H1329/IMTP.git
-cd IMTP/experiments/iimt
+cd IMTP/experiments/selective_news
+python3 -m venv .venv && source .venv/bin/activate
+pip install -U pip -r requirements.txt
+source env.sh
+export NEWS_DATA=$HOME/data/hf_news_pack   # rsync crops separately (~4.7GB)
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+chmod +x run_4gpu.sh
+./run_4gpu.sh smoke
 ```
 
-## Environment (isolated)
+Full protocol, experiment map (1–10), and paper-table scoring:
+
+- [`experiments/selective_news/CONTEXT.md`](experiments/selective_news/CONTEXT.md)
+- [`experiments/selective_news/H100_4GPU_RUN.md`](experiments/selective_news/H100_4GPU_RUN.md)
+
+## Quick start — open-source IIMT
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+cd ~/IMTP/experiments/iimt
+python3 -m venv .venv && source .venv/bin/activate
 pip install -U pip -r requirements.txt
 source env.sh
 export CUDA_VISIBLE_DEVICES=0
-```
-
-## Smoke test
-
-```bash
 chmod +x setup.sh run_all.sh
 ./run_all.sh
 ```
@@ -34,32 +44,30 @@ IMTP/
   README.md
   docs/EXPERIMENT_PROTOCOL_OPENSOURCE_IIMT.md
   experiments/
-    samples/          # smoke-test PNGs
-    iimt/             # harness (scripts, config, manifests, runbooks)
+    samples/              # IIMT smoke PNGs
+    iimt/                 # open-source IIMT harness
+    selective_news/       # news selective-translation bench (this work)
+      CONTEXT.md
+      H100_4GPU_RUN.md
+      run_4gpu.sh
+      gold/               # news_eval + rules (GT frozen)
+      scripts/
 ```
 
-Manifest paths use `../../../samples/` from `experiments/iimt/data/manifests/` — keep this layout.
+## Data note
 
-## Docs
+`selective_news` gold JSON is in git. Image crops (`hf_news_pack`) are **not** — see `H100_4GPU_RUN.md` §2.
 
-- `experiments/iimt/H100_SETUP.md` — H100 deploy guide
-- `experiments/iimt/RUNBOOK.md` — full runbook
-- `docs/EXPERIMENT_PROTOCOL_OPENSOURCE_IIMT.md` — open-source experiment protocol
-
-## Third-party (once)
+## Third-party (IIMT only, once)
 
 ```bash
-cd ../../third_party   # create sibling under experiments/ or adjust as needed
-mkdir -p third_party && cd third_party
+mkdir -p ~/IMTP/experiments/third_party && cd ~/IMTP/experiments/third_party
 git clone https://github.com/qzp2018/AnyTrans.git
 git clone https://github.com/DeepLearnXMU/translatotron-v Translatotron-V
 git clone https://github.com/BITHLP/PRIM
 ```
 
-## HF / data
+## HF / tokens
 
-- `HF_TOKEN` for gated models (PRIM, VisTrans)
-- IMTBench/VISTRA/PRIM: manifests + images prepared separately
-- DIMT25: EULA + HF access
-
-See `experiments/iimt/RUNBOOK.md` and `PUSH_AND_DEPLOY.md`.
+- `HF_TOKEN` for gated models (Gemma, PRIM, VisTrans, …)
+- DIMT25: EULA + HF access (IIMT path)

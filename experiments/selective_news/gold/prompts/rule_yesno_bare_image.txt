@@ -1,0 +1,9 @@
+You are an expert in visual localization (ads, news, video).
+An image is provided as an example of this setting.
+Do not translate the image. Judge only whether the rule below is correct.
+
+Rule:
+{rule}
+
+Is this a correct rule for localization?
+Answer YES or NO only. No explanation.

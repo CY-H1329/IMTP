@@ -1,0 +1,91 @@
+{
+  "note": "Constructional gold rules. C2 dropped from the yes/no battery (not image-grounded). Score on 9 rules: A1-A5, C1, C3, N1, N2.",
+  "ads": [
+    {
+      "id": "A1",
+      "rule": "When localizing a product advertisement, brand names must stay in their original form (must not be translated).",
+      "gold": "preserve",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/ads/cosmetic/514ftDCjF+L._SL1500_/en.png",
+      "examples": "- LANEIGE stays LANEIGE\n- Kellogg's stays Kellogg's\n- cepoLAB stays cepoLAB"
+    },
+    {
+      "id": "A2",
+      "rule": "When localizing a product advertisement, product names printed on the pack must stay in their original form (must not be translated).",
+      "gold": "preserve",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/ads/cosmetic/514ftDCjF+L._SL1500_/en.png",
+      "examples": "- Lip Sleeping Mask stays Lip Sleeping Mask\n- Raisin Bran Crunch Cereal stays Raisin Bran Crunch Cereal"
+    },
+    {
+      "id": "A3",
+      "rule": "When localizing a product advertisement, marketing copy (headline, slogan, CTA, claims, hashtags, step labels on the ad layout) must be translated.",
+      "gold": "translate",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/ads/cosmetic/514ftDCjF+L._SL1500_/en.png",
+      "examples": "- \"Wake up to softer, plumper lips\" → \"Lèvres repulpées au réveil\"\n- \"90% Pure Essence Serum Deep absorption in seconds\" → \"생물학적 에센스 90% 빠른 흡수, 산뜻한 느낌\""
+    },
+    {
+      "id": "A4",
+      "rule": "When localizing a product advertisement, text printed on the physical pack must stay in its original form (must not be translated).",
+      "gold": "preserve",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/ads/cosmetic/514ftDCjF+L._SL1500_/en.png",
+      "examples": "- On the pack, LANEIGE and Lip Sleeping Mask stay as printed\n- On the pack, SkinCeuticals and C E Ferulic Vitamin C Serum stay as printed"
+    },
+    {
+      "id": "A5",
+      "rule": "When localizing a product advertisement, INCI / ingredient lists, model codes, net weight, SPF and units printed on the pack must stay in their original form (must not be translated).",
+      "gold": "preserve",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/ads/cosmetic/610Ydj0HJKL._SL1500_/en.png",
+      "examples": "- Pack print: UV Lip Balm SPF 36 stays UV Lip Balm SPF 36\n- Pack print: Aqua / Glycerin, 50 ml, model codes stay as printed"
+    }
+  ],
+  "video": [
+    {
+      "id": "C1",
+      "rule": "Text that comes from the timed-text / VTT cue burned on the frame is the localization layer. It must be translated by default.",
+      "gold": "translate",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/selective_bench/youtube_frames/A-vX1AGBGsc/frames/t00000/ko.jpg",
+      "examples": "- \"- 오늘 저와 제 팀은 1학년으로 돌아갑니다\" → \"- Today me and the crew are going back to 1st grade.\""
+    },
+    {
+      "id": "C2",
+      "dropped": true,
+      "why_dropped": "Not readable from the image alone. Looks like 'do not translate song lyrics'. Needs official src/tgt VTT pair, not a single frame.",
+      "rule": "A source token in a burned-in caption must be preserved if and only if the official target cue keeps the same surface form. If the whole cue is identical across source and target, the line must be preserved.",
+      "gold": "preserve",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/selective_bench/youtube_frames/OwpgvSo_G0g/frames/t00055/fr.jpg",
+      "examples": "- Official EN cue is identical in KO: \"Uh Uh Too Spicy\" → \"Uh Uh Too Spicy\"\n- \"I'm too Spicy\" → \"I'm too Spicy\""
+    },
+    {
+      "id": "C3",
+      "rule": "Text visible in the video world itself (logos, signs, watermarks, painted lyrics), not the caption layer, must stay in its original form.",
+      "gold": "preserve",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/selective_bench/youtube_frames/OwpgvSo_G0g/frames/t00055/fr.jpg",
+      "examples": "- YouTube / Netflix watermark stays\n- Painted lyrics in the Golden lyric video stay as painted (they are not the VTT layer)"
+    }
+  ],
+  "news": [
+    {
+      "id": "N1",
+      "rule": "When localizing a news page, the headline, standfirst and body must be translated.",
+      "gold": "translate",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/news/donga_agency_mergers/crop/en.png",
+      "examples": "- \"Agency mergers could trigger leadership shakeup\" → \"公共機関統廃合で機関トップ・役員数百人を削減へ\"\n- Person name follows the official edition: \"Yoon Suk Yeol\" → \"尹錫悦\""
+    },
+    {
+      "id": "N2",
+      "rule": "When localizing a news page, text that is inside the photograph (building signs, diegetic lettering) must stay in its original form (must not be translated).",
+      "gold": "preserve",
+      "expect": "YES",
+      "image": "/workspace/chanyeong/ICLR/news/donga_agency_mergers/crop/en.png",
+      "examples": "- Building sign in the photo: \"재정경제부\" → \"재정경제부\""
+    }
+  ]
+}

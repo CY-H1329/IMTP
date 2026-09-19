@@ -1,0 +1,13 @@
+VIDEO
+This is a video frame with subtitles.
+We are making another-language version of this frame (into French).
+What text in the image should be translated?
+What text should be left unchanged?
+Name the texts. Short answer.
+
+NEWS
+This is a news article page.
+We are making another-language version of this page (into French).
+What text in the image should be translated?
+What text should be left unchanged?
+Name the texts. Short answer.

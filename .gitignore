@@ -2,6 +2,14 @@
 .cache/
 **/outputs/
 **/results/
+**/logs/
 __pycache__/
 *.pyc
 .DS_Store
+experiments/selective_news/data/
+*.tar
+*.tar.gz
+*.tar.zst
+*.pt
+*.bin
+*.safetensors

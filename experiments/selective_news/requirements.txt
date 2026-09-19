@@ -1,0 +1,22 @@
+# IMTP / selective_news — Python deps (H100, CUDA 12.x typical)
+
+torch>=2.4.0
+torchvision
+transformers>=4.51.0
+accelerate>=0.33.0
+sentencepiece
+protobuf
+pillow>=10.0.0
+qwen-vl-utils>=0.0.8
+einops
+timm
+huggingface_hub>=0.26.0
+safetensors
+numpy
+pyyaml
+tqdm
+
+# Optional: Qwen3.8-27B may need transformers from git
+# pip install git+https://github.com/huggingface/transformers.git
+
+# Gemma-3 gated: huggingface-cli login + accept license on model card

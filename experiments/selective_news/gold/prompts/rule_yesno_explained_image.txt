@@ -1,0 +1,17 @@
+You are an expert in visual localization (ads, news, video).
+
+Localization here means: the image is already in one language, and you prepare it for another market. You do not translate everything. Proper names and frozen print stay in their original form. Reader-facing copy is translated.
+
+Examples of proper names (must not be translated): LANEIGE, SkinCeuticals, Kellogg's, cepoLAB.
+Examples of reader-facing copy (must be translated): "Wake up to softer, plumper lips" → "Lèvres repulpées au réveil".
+
+An image is provided as an example of this setting. Do not translate the image. Judge only whether the rule below is correct.
+
+Rule:
+{rule}
+
+Illustrative texts for this rule:
+{examples}
+
+Is this a correct rule for localization?
+Answer YES or NO only. No explanation.

@@ -1,0 +1,40 @@
+{
+  "note": "3 categories × 500 = 1500. Every probe is a fresh session: one user message, no chat history, no follow-up, no 'if yes then…'. The experimenter stitches answers; the model never sees prior Q&A. Later stages consume S0 spans as NEW standalone questions, not as continuations.",
+  "sample": {"n_per_category": 500, "n_total": 1500, "seed": 7, "categories": ["ads", "video", "news"]},
+  "flow": "independent S0_present → independent S0_quote (only if present=YES) → independent S1 → independent S2 → independent S3 → independent S4. No conversational tails.",
+  "isolation": {
+    "chat_history": false,
+    "one_question_per_call": true,
+    "no_reference_to_prior_answers": true,
+    "gating": "experimenter-side only: skip later probes when S0_present is not YES or S0_quote is empty"
+  },
+  "rules": {
+    "ads": [
+      {"id": "A1", "taxonomy": "C1", "element": "a brand name (proper name on the pack)", "gold_decision": "preserve"},
+      {"id": "A2", "taxonomy": "C2", "element": "a product name printed on the pack", "gold_decision": "preserve"},
+      {"id": "A3", "taxonomy": "COPY", "element": "marketing copy (headline, slogan, CTA, claims on the ad layout, not on the pack)", "gold_decision": "translate"},
+      {"id": "A4", "taxonomy": "C3", "element": "text printed on the physical pack itself", "gold_decision": "preserve"},
+      {"id": "A5", "taxonomy": "B3", "element": "ingredient lists, model codes, net weight, SPF or units printed on the pack", "gold_decision": "preserve"}
+    ],
+    "video": [
+      {"id": "C1", "taxonomy": "CAPTION", "element": "a burned-in subtitle / caption (timed-text layer at the bottom)", "gold_decision": "translate"},
+      {"id": "C3", "taxonomy": "OFFICIAL_KEEP", "element": "text in the video world itself (logos, watermarks, signs, UI), not the subtitle", "gold_decision": "preserve"}
+    ],
+    "news": [
+      {"id": "N1", "taxonomy": "HEADLINE", "element": "a news headline", "gold_decision": "translate"},
+      {"id": "N1b", "taxonomy": "BODY", "element": "article body or standfirst", "gold_decision": "translate"},
+      {"id": "N1c", "taxonomy": "MASTHEAD", "element": "the newspaper masthead / wordmark", "gold_decision": "translate"},
+      {"id": "N2", "taxonomy": "PHOTO_SIGN", "element": "text inside the photograph (building signs, plaques, screens)", "gold_decision": "preserve"},
+      {"id": "NP", "taxonomy": "PERSON", "element": "a person name (proper noun)", "gold_decision": "translate"},
+      {"id": "NO", "taxonomy": "ORG", "element": "an organization name (proper noun)", "gold_decision": "translate"}
+    ]
+  },
+  "prompts": {
+    "S0_present": "Look at this image.\nIs there {element} in this image?\nAnswer YES or NO only.",
+    "S0_quote": "Look at this image.\nQuote the exact visible text that is {element}.\nIf there is none, answer NONE.\nOutput the quote only. No explanation.",
+    "S1_classify": "Is the text below {element}?\n\n\"{span}\"\n\nAnswer YES or NO only.",
+    "S2_policy": "A {tgt_n} version of a document is being produced.\nShould the text below be translated, or left unchanged?\n\n\"{span}\"\n\nAnswer TRANSLATE or PRESERVE only.",
+    "S3_decide": "Look at this image. Target language: {tgt_n}.\nShould the visible text \"{span}\" be translated, or left unchanged?\nAnswer TRANSLATE or PRESERVE only.",
+    "S4_generate": "Localize this image into {tgt_n}.\nFor every visible text, output a JSON list of objects {{\"text\":\"...\",\"decision\":\"translate\"|\"preserve\",\"output\":\"...\"}}.\nNo extra commentary."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "note": "Rule-friendly yes/no. No word localize. Image + French version + should this class of text be translated? C2 dropped.",
+  "suffix": "Answer YES or NO only. No explanation.",
+  "preamble": {
+    "ads": "This is a product advertisement.\nWe are making a French version of this ad.",
+    "video": "This is a video frame with subtitles.\nWe are making a French version of this frame.",
+    "news": "This is a news article page.\nWe are making a French version of this page."
+  },
+  "items": [
+    {"id": "A1", "split": "ads", "gold": "preserve", "expect": "NO", "q": "Should the brand names be translated?", "meaning": "Marque sur le pack (LANEIGE) : on ne traduit pas.", "image": "/workspace/chanyeong/ICLR/ads/cosmetic/514ftDCjF+L._SL1500_/en.png"},
+    {"id": "A2", "split": "ads", "gold": "preserve", "expect": "NO", "q": "Should the product names printed on the pack be translated?", "meaning": "Nom produit pack (Lip Sleeping Mask) : on ne traduit pas.", "image": "/workspace/chanyeong/ICLR/ads/cosmetic/514ftDCjF+L._SL1500_/en.png"},
+    {"id": "A3", "split": "ads", "gold": "translate", "expect": "YES", "q": "Should the marketing copy (headline, slogan, claims on the ad layout) be translated?", "meaning": "Copy overlay : on traduit.", "image": "/workspace/chanyeong/ICLR/ads/cosmetic/514ftDCjF+L._SL1500_/en.png"},
+    {"id": "A4", "split": "ads", "gold": "preserve", "expect": "NO", "q": "Should the text printed on the physical pack be translated?", "meaning": "Print de la boîte : on ne traduit pas.", "image": "/workspace/chanyeong/ICLR/ads/cosmetic/514ftDCjF+L._SL1500_/en.png"},
+    {"id": "A5", "split": "ads", "gold": "preserve", "expect": "NO", "q": "Should ingredient lists, model codes, net weight, SPF and units printed on the pack be translated?", "meaning": "INCI / SPF / net wt sur le pack : on ne traduit pas.", "image": "/workspace/chanyeong/ICLR/ads/cosmetic/610Ydj0HJKL._SL1500_/en.png"},
+    {"id": "C1", "split": "video", "gold": "translate", "expect": "YES", "q": "Should the burned-in subtitle at the bottom of the frame be translated?", "meaning": "Sous-titre incrusté : on traduit.", "image": "/workspace/chanyeong/ICLR/selective_bench/youtube_frames/A-vX1AGBGsc/frames/t00000/ko.jpg"},
+    {"id": "C3", "split": "video", "gold": "preserve", "expect": "NO", "q": "Should text that is in the video world itself (logos, watermarks, text on objects or the phone screen), not the subtitle, be translated?", "meaning": "Logo / watermark / UI dans le plan : on ne traduit pas.", "image": "/workspace/chanyeong/ICLR/selective_bench/youtube_frames/OwpgvSo_G0g/frames/t00055/fr.jpg"},
+    {"id": "N1", "split": "news", "gold": "translate", "expect": "YES", "q": "Should the headline, standfirst and body be translated?", "meaning": "Titre / chapô / corps : on traduit.", "image": "/workspace/chanyeong/ICLR/news/donga_agency_mergers/crop/en.png"},
+    {"id": "N2", "split": "news", "gold": "preserve", "expect": "NO", "q": "Should the text inside the photograph (building signs) be translated?", "meaning": "Enseigne dans la photo : on ne traduit pas.", "image": "/workspace/chanyeong/ICLR/news/donga_agency_mergers/crop/en.png"}
+  ]
+}

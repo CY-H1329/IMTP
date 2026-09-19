@@ -1,0 +1,26 @@
+# models for 4×H100 selective_news runs
+# aliases resolve in run_rule_yesno.ALIASES / run_news_tables.ALIASES
+
+open_8b:
+  - qwen3vl          # Qwen/Qwen3-VL-8B-Instruct
+  - internvl35       # OpenGVLab/InternVL3_5-8B-HF
+
+open_12b:
+  - gemma12          # google/gemma-3-12b-it
+
+open_27b:
+  - qwen38           # Qwen/Qwen3.8-27B  (needs transformers git + ~80GB)
+  - gemma27          # google/gemma-3-27b-it
+
+# default assignment on 4 GPUs (override with CUDA_VISIBLE_DEVICES)
+gpu_plan_full:
+  "0": gemma12
+  "1": qwen38        # or leave free for method / lang shards
+  "2": qwen3vl
+  "3": internvl35
+
+gpu_plan_8b_only:
+  "0": qwen3vl
+  "1": internvl35
+  "2": qwen3vl       # shard 0/2
+  "3": internvl35    # shard 1/2

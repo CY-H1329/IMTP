@@ -1,0 +1,68 @@
+# Paper experiment map → scripts / columns
+# Claim: VLMs know selective rules verbally but fail to bind them to visual context.
+
+experiments:
+  E1_rule_know:
+    name: "KNOW-rules (verbal YES/NO on N1/N2)"
+    script: scripts/run_rule_yesno.py
+    table: "Table 1 KNOW-rules"
+    notes: "No article image. Blank image only."
+
+  E2_know_spans:
+    name: "KNOW T/P on gold spans without image"
+    script: scripts/run_news_tables.py
+    field: know
+    table: "Table 1 KNOW"
+
+  E3_decision:
+    name: "Decision T/P with image on listed gold spans"
+    script: scripts/run_news_tables.py
+    field: decision
+    table: "Table 1 Decision"
+
+  E4_preserve:
+    name: "Preserve accuracy on gold-P / PHOTO_SIGN"
+    script: scripts/run_news_tables.py
+    field: preserve
+    table: "Table 1 Preserve"
+
+  E5_gap_know_act:
+    name: "KNOW→ACT gap (knew preserve but rewrote in gen)"
+    script: scripts/score_news_tables.py
+    field: know_to_act
+    table: "Table 1 KNOW→ACT"
+
+  E6_translation:
+    name: "Translation match to official target (gold-T spans)"
+    script: scripts/run_news_tables.py
+    field: translation
+    table: "Table 1 Translation"
+
+  E7_generation:
+    name: "Unguided S4 generation overall"
+    script: scripts/run_news_tables.py
+    field: generation
+    table: "Table 1 Generation / Table 3 Unguided"
+
+  E8_guided_vs_unguided:
+    name: "Guided oracle inventory vs unguided (Δ)"
+    script: scripts/run_news_tables.py
+    fields: [S4_unguided, S4_guided]
+    table: "Table 3"
+
+  E9_language:
+    name: "Per language-pair (Dong-A 4-lang / Chosun en-ko)"
+    script: scripts/run_lang_pairs.py
+    table: "Table lang / appendix"
+
+  E10_method_bind:
+    name: "Method 1 Bind-then-Act vs unguided vs oracle"
+    script: scripts/run_method_bind.py
+    table: "Table method / intervention"
+    notes: "Inference-time only. Position as analysis if Δ small."
+
+protocol_notes:
+  - "Each article in run_news_tables = 4 isolated forwards (KNOW, Decision, unguided S4, guided S4)."
+  - "Guided = rules + TRANSLATE/PRESERVE lists, NO gold target strings."
+  - "PHOTO_SIGN = preserve; HEADLINE/BODY/MASTHEAD = translate."
+  - "Strict scoring: missing gold span = fail (see strict_small_eval.py)."
