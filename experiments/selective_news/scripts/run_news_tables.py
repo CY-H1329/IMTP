@@ -261,18 +261,21 @@ def main() -> None:
                 du = score_block(rec["decision"])
                 su = score_block(rec["S4_unguided"])
                 sg = score_block(rec["S4_guided"])
+                pu = rec["preserve_act_unguided"]
+                pg = rec["preserve_act_guided"]
+                tu = rec["translate_act_unguided"]
+                tg = rec["translate_act_guided"]
                 print_progress(
                     done_n,
                     total,
                     prefix=slug,
                     extra=(
-                        f"{it['id'][:36]} Dec={du['ok']}/{du['n']} "
-                        f"ACT-P u/g={sum(1 for x in rec['preserve_act_unguided'] if x.get('ok'))}/"
-                        f"{sum(1 for x in rec['preserve_act_guided'] if x.get('ok'))} "
-                        f"ACT-T u/g="
-                        f"{sum(1 for x in rec['translate_act_unguided'] if x.get('matched_gt_tgt'))}/"
-                        f"{sum(1 for x in rec['translate_act_guided'] if x.get('matched_gt_tgt'))}"
-                        f" missU={su.get('missing',0)} missG={sg.get('missing',0)}"
+                        f"{it['id'][:32]} "
+                        f"Dec={du['ok']}/{du['n']} "
+                        f"P={sum(1 for x in pu if x.get('ok'))}/{len(pu)}"
+                        f"→{sum(1 for x in pg if x.get('ok'))}/{len(pg)} "
+                        f"T={sum(1 for x in tu if x.get('matched_gt_tgt'))}/{len(tu)}"
+                        f"→{sum(1 for x in tg if x.get('matched_gt_tgt'))}/{len(tg)}"
                     ),
                 )
         vlm.close()

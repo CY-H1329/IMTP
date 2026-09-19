@@ -247,17 +247,26 @@ def main() -> None:
     (dest / "table3.tex").write_text("\n".join(tex_b), encoding="utf-8")
     (dest / "summary.json").write_text(json.dumps(summaries, ensure_ascii=False, indent=2), encoding="utf-8")
     print("wrote", dest / "tables.md")
+    print(
+        f"{'model':28s} {'n':>5} {'Dec':>6} "
+        f"{'P_ung':>6} {'P_g':>6} {'ΔP':>6} "
+        f"{'T_ung':>6} {'T_g':>6} {'ΔT':>6}"
+    )
     for slug, s in summaries.items():
         print(
-            slug,
-            "n",
-            s["n_items"],
-            "Dec",
-            s["decision"]["acc"],
-            "ΔP",
-            s["delta_preserve"],
-            "ΔT",
-            s["delta_translate"],
+            f"{slug[:28]:28s} {s['n_items']:5d} {fmt(s['decision']['acc']):>6} "
+            f"{fmt(s['act_preserve_unguided']['acc']):>6} {fmt(s['act_preserve_guided']['acc']):>6} "
+            f"{fmt(s['delta_preserve']):>6} "
+            f"{fmt(s['act_translate_unguided']['acc']):>6} {fmt(s['act_translate_guided']['acc']):>6} "
+            f"{fmt(s['delta_translate']):>6}"
+        )
+        # raw counts too
+        print(
+            f"{'':28s}       "
+            f"P {s['act_preserve_unguided']['ok']}/{s['act_preserve_unguided']['n']} → "
+            f"{s['act_preserve_guided']['ok']}/{s['act_preserve_guided']['n']}  |  "
+            f"T(gt) {s['act_translate_unguided']['ok']}/{s['act_translate_unguided']['n']} → "
+            f"{s['act_translate_guided']['ok']}/{s['act_translate_guided']['n']}"
         )
 
 
