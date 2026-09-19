@@ -1,4 +1,144 @@
 {
+  "InternVL3_5-8B-HF": {
+    "n_items": 2790,
+    "scoring": "decision_probe+act_gt+item_perfect",
+    "know": {
+      "n": 11160,
+      "ok": 8430,
+      "acc": 0.7553763440860215,
+      "missing": 261,
+      "missing_rate": 0.02338709677419355
+    },
+    "decision": {
+      "n": 11160,
+      "ok": 8070,
+      "acc": 0.7231182795698925,
+      "missing": 336,
+      "missing_rate": 0.030107526881720432
+    },
+    "decision_item": {
+      "n": 2790,
+      "ok": 8,
+      "acc": 0.002867383512544803
+    },
+    "preserve_decision": {
+      "n": 2790,
+      "ok": 2727,
+      "acc": 0.9774193548387097,
+      "missing": 58,
+      "missing_rate": 0.02078853046594982
+    },
+    "act_item_unguided": {
+      "n": 2790,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "act_item_guided": {
+      "n": 2790,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "delta_act_item": 0.0,
+    "act_preserve_unguided": {
+      "n": 2790,
+      "ok": 244,
+      "acc": 0.08745519713261649,
+      "missing": 2506,
+      "missing_rate": 0.8982078853046594
+    },
+    "act_preserve_guided": {
+      "n": 2790,
+      "ok": 2304,
+      "acc": 0.8258064516129032,
+      "missing": 475,
+      "missing_rate": 0.17025089605734767
+    },
+    "act_translate_unguided": {
+      "n": 8370,
+      "ok": 54,
+      "acc": 0.0064516129032258064
+    },
+    "act_translate_guided": {
+      "n": 8370,
+      "ok": 787,
+      "acc": 0.094026284348865
+    },
+    "delta_preserve": 0.7383512544802867,
+    "delta_translate": 0.08757467144563919,
+    "act_unguided": {
+      "n": 11160,
+      "ok": 298,
+      "acc": 0.026702508960573478,
+      "missing": 6436,
+      "missing_rate": 0.5767025089605735
+    },
+    "act_guided": {
+      "n": 11160,
+      "ok": 3091,
+      "acc": 0.2769713261648746,
+      "missing": 1354,
+      "missing_rate": 0.12132616487455197
+    },
+    "delta_act": 0.2502688172043011,
+    "know_to_act": {
+      "n": 2790,
+      "gap": 2499,
+      "rate": 0.8956989247311828
+    },
+    "preserve": {
+      "n": 2790,
+      "ok": 2727,
+      "acc": 0.9774193548387097,
+      "missing": 58,
+      "missing_rate": 0.02078853046594982
+    },
+    "translation": {
+      "n": 8370,
+      "ok": 54,
+      "acc": 0.0064516129032258064
+    },
+    "generation": {
+      "n": 2790,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "unguided": {
+      "n": 2790,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "guided": {
+      "n": 2790,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "delta": 0.0,
+    "act": {
+      "n": 2790,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "know_rules": {
+      "n_ok": 2,
+      "n": 2,
+      "items": [
+        {
+          "id": "N1",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "N2",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        }
+      ]
+    }
+  },
   "Qwen3-VL-8B-Instruct": {
     "n_items": 2841,
     "scoring": "decision_probe+act_gt+item_perfect",

@@ -1,3 +1,5 @@
+# InternVL vs Qwen3 (and others)
+
 # News selective translation — Decision + ACT (item all-or-nothing)
 
 ACT success for an article = **all** gold spans correct (translate AND preserve).
@@ -23,3 +25,4 @@ Partial credit does not count as success. Span P/T rates below are diagnostic on
 |---|---:|---:|---:|---:|
 | InternVL3_5-8B-HF | 8.7 | 82.6 | 0.6 | 9.4 |
 | Qwen3-VL-8B-Instruct | 10.8 | 90.6 | 1.1 | 5.3 |
+

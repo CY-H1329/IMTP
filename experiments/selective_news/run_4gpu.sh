@@ -14,6 +14,7 @@ IFS=',' read -r -a GPU_ARR <<< "$GPUS"
 GOLD="${GOLD:-$SN_ROOT/gold/news_eval.json}"
 OUT="${OUT:-$SN_ROOT/results}"
 LOG="$SN_ROOT/logs"
+WAIT_PIDS=()
 mkdir -p "$OUT" "$LOG" "$OUT/news_tables_act" "$OUT/bind_method" "$OUT/lang" "$OUT/strict_small" "$OUT/rule_yesno"
 MODE="${1:-smoke}"
 LIMIT="${LIMIT:-0}"   # 0 = all articles
@@ -37,14 +38,23 @@ run_bg() {
   local gpu="$1"; shift
   local name="$1"; shift
   echo "[launch] GPU=$gpu name=$name → $LOG/${name}.log"
-  CUDA_VISIBLE_DEVICES="$gpu" setsid python "$@" \
+  # no setsid: keep job as shell child so we can wait on it; use disown-safe PID file
+  CUDA_VISIBLE_DEVICES="$gpu" python "$@" \
     >"$LOG/${name}.log" 2>&1 &
-  echo $! >"$LOG/${name}.pid"
+  local pid=$!
+  echo "$pid" >"$LOG/${name}.pid"
+  WAIT_PIDS+=("$pid")
 }
 
 wait_all() {
-  echo "[wait] $(date -Is) pids=$(cat "$LOG"/*.pid 2>/dev/null | tr '\n' ' ')"
-  wait || true
+  echo "[wait] $(date -Is) pids=${WAIT_PIDS[*]:-}"
+  local pid
+  for pid in "${WAIT_PIDS[@]:-}"; do
+    if kill -0 "$pid" 2>/dev/null; then
+      wait "$pid" || true
+    fi
+  done
+  WAIT_PIDS=()
   echo "[wait done] $(date -Is)"
 }
 

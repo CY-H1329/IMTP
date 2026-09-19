@@ -45,10 +45,13 @@ def acc(rows: list[dict], key: str = "ok") -> dict:
 def load_jsonl(path: Path) -> list[dict]:
     rows = []
     seen = set()
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         if not line.strip():
             continue
-        rec = json.loads(line)
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
         i = rec.get("id")
         if i in seen:
             continue
