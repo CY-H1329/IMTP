@@ -45,17 +45,32 @@ def acc(rows: list[dict], key: str = "ok") -> dict:
 def load_jsonl(path: Path) -> list[dict]:
     rows = []
     seen = set()
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        if not line.strip():
-            continue
+    if not path.exists():
+        return rows
+    text = path.read_text(encoding="utf-8", errors="replace")
+    dec = json.JSONDecoder()
+    i, n = 0, len(text)
+    while i < n:
+        while i < n and text[i] in " \t\r\n\ufeff\u2028\u2029":
+            i += 1
+        if i >= n:
+            break
         try:
-            rec = json.loads(line)
+            rec, end = dec.raw_decode(text, i)
         except json.JSONDecodeError:
+            # skip to next newline-ish
+            j = i + 1
+            while j < n and text[j] not in "\n\u2028\u2029":
+                j += 1
+            i = j + 1
             continue
-        i = rec.get("id")
-        if i in seen:
+        i = end
+        if not isinstance(rec, dict):
             continue
-        seen.add(i)
+        rid = rec.get("id")
+        if rid in seen:
+            continue
+        seen.add(rid)
         rows.append(rec)
     return rows
 

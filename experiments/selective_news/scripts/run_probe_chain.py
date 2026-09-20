@@ -113,11 +113,15 @@ def gold_span(item: dict, taxonomy: str) -> dict | None:
 def load_done(path: Path) -> set[str]:
     done = set()
     if path.exists():
-        for line in path.read_text(encoding="utf-8").splitlines():
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             if not line.strip():
                 continue
-            rec = json.loads(line)
-            done.add(rec["id"])
+            try:
+                rec = json.loads(line)
+            except Exception:
+                continue
+            if isinstance(rec, dict) and "id" in rec:
+                done.add(rec["id"])
     return done
 
 

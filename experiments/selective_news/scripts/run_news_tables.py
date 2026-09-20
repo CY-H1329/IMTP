@@ -257,7 +257,9 @@ def main() -> None:
         with outp.open("a", encoding="utf-8") as f:
             for it in todo:
                 rec = run_item(vlm, it)
-                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                _line = json.dumps(rec, ensure_ascii=True)
+                f.write(_line + "
+")
                 f.flush()
                 n += 1
                 done_n = already + n
