@@ -61,6 +61,9 @@ ALIASES.update(
         "qwen38": "Qwen/Qwen3.8-27B",
         "qwen3.8-27b": "Qwen/Qwen3.8-27B",
         "qwen38-27b": "Qwen/Qwen3.8-27B",
+        "pixtral": "mistral-community/pixtral-12b",
+        "pixtral12": "mistral-community/pixtral-12b",
+        "pixtral-12b": "mistral-community/pixtral-12b",
     }
 )
 

@@ -53,6 +53,9 @@ ALIASES = {
     "qwen38": "Qwen/Qwen3.8-27B",
     "qwen3.8-27b": "Qwen/Qwen3.8-27B",
     "qwen38-27b": "Qwen/Qwen3.8-27B",
+    "pixtral": "mistral-community/pixtral-12b",
+    "pixtral12": "mistral-community/pixtral-12b",
+    "pixtral-12b": "mistral-community/pixtral-12b",
 }
 
 
@@ -93,6 +96,8 @@ def family_of(model_id: str) -> str:
         return "hf_vlm"
     if "internvl" in m:
         return "internvl"
+    if "pixtral" in m:
+        return "hf_vlm"
     if "gemma-3" in m or "gemma3" in m:
         return "hf_vlm"
     if "qwen2-vl" in m and "2.5" not in m:

@@ -558,5 +558,145 @@
         }
       ]
     }
+  },
+  "pixtral-12b": {
+    "n_items": 2843,
+    "scoring": "decision_probe+act_gt+item_perfect",
+    "know": {
+      "n": 11372,
+      "ok": 9071,
+      "acc": 0.7976609215617305,
+      "missing": 285,
+      "missing_rate": 0.02506155469574393
+    },
+    "decision": {
+      "n": 11372,
+      "ok": 9288,
+      "acc": 0.8167428772423496,
+      "missing": 62,
+      "missing_rate": 0.005451987337319733
+    },
+    "decision_item": {
+      "n": 2843,
+      "ok": 810,
+      "acc": 0.28491030601477313
+    },
+    "preserve_decision": {
+      "n": 2843,
+      "ok": 2801,
+      "acc": 0.9852268730214562,
+      "missing": 37,
+      "missing_rate": 0.013014421385860007
+    },
+    "act_item_unguided": {
+      "n": 2843,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "act_item_guided": {
+      "n": 2843,
+      "ok": 1,
+      "acc": 0.00035174111853675694
+    },
+    "delta_act_item": 0.00035174111853675694,
+    "act_preserve_unguided": {
+      "n": 2843,
+      "ok": 19,
+      "acc": 0.006683081252198382,
+      "missing": 2811,
+      "missing_rate": 0.9887442842068238
+    },
+    "act_preserve_guided": {
+      "n": 2843,
+      "ok": 2612,
+      "acc": 0.9187478016180092,
+      "missing": 216,
+      "missing_rate": 0.0759760816039395
+    },
+    "act_translate_unguided": {
+      "n": 8529,
+      "ok": 61,
+      "acc": 0.007152069410247391
+    },
+    "act_translate_guided": {
+      "n": 8529,
+      "ok": 1471,
+      "acc": 0.17247039512252316
+    },
+    "delta_preserve": 0.9120647203658108,
+    "delta_translate": 0.16531832571227575,
+    "act_unguided": {
+      "n": 11372,
+      "ok": 80,
+      "acc": 0.007034822370735139,
+      "missing": 8257,
+      "missing_rate": 0.7260816039395005
+    },
+    "act_guided": {
+      "n": 11372,
+      "ok": 4083,
+      "acc": 0.35903974674639466,
+      "missing": 403,
+      "missing_rate": 0.035437917692578265
+    },
+    "delta_act": 0.3520049243756595,
+    "know_to_act": {
+      "n": 2843,
+      "gap": 2786,
+      "rate": 0.9799507562434049
+    },
+    "preserve": {
+      "n": 2843,
+      "ok": 2801,
+      "acc": 0.9852268730214562,
+      "missing": 37,
+      "missing_rate": 0.013014421385860007
+    },
+    "translation": {
+      "n": 8529,
+      "ok": 61,
+      "acc": 0.007152069410247391
+    },
+    "generation": {
+      "n": 2843,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "unguided": {
+      "n": 2843,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "guided": {
+      "n": 2843,
+      "ok": 1,
+      "acc": 0.00035174111853675694
+    },
+    "delta": 0.00035174111853675694,
+    "act": {
+      "n": 2843,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "know_rules": {
+      "n_ok": 0,
+      "n": 2,
+      "items": [
+        {
+          "id": "N1",
+          "expect": "YES",
+          "pred": "NO",
+          "ok": false,
+          "raw": "NO"
+        },
+        {
+          "id": "N2",
+          "expect": "YES",
+          "pred": "NO",
+          "ok": false,
+          "raw": "NO"
+        }
+      ]
+    }
   }
 }

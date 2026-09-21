@@ -1,0 +1,20 @@
+{
+  "n_ok": 0,
+  "n": 2,
+  "items": [
+    {
+      "id": "N1",
+      "expect": "YES",
+      "pred": "NO",
+      "ok": false,
+      "raw": "NO"
+    },
+    {
+      "id": "N2",
+      "expect": "YES",
+      "pred": "NO",
+      "ok": false,
+      "raw": "NO"
+    }
+  ]
+}
