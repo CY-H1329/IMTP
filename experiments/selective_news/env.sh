@@ -19,3 +19,8 @@ if [[ -z "${NEWS_DATA:-}" ]]; then
 fi
 echo "[env] SELECTIVE_BENCH_ROOT=$SELECTIVE_BENCH_ROOT"
 echo "[env] NEWS_DATA=${NEWS_DATA:-unset}"
+
+# Large model weights on /dataset (root FS tight)
+export HF_HOME="${HF_HOME:-/dataset/chanyeong/hf_home}"
+export HUGGINGFACE_HUB_CACHE="${HUGGINGFACE_HUB_CACHE:-$HF_HOME/hub}"
+export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME/transformers}"

@@ -1,6 +1,6 @@
 # Paper tables index
 
-- `results/paper_tables/paper_tables.md`
+- `/home/gpuuser/chanyeong/IMTP/experiments/selective_news/results/paper_tables/paper_tables.md`
 
 ## How to paste into the paper
 1. Table 1 / Table 3 → `paper_table1.tex`, `paper_table3.tex` (from news_tables).
