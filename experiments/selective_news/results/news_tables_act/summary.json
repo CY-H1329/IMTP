@@ -559,6 +559,146 @@
       ]
     }
   },
+  "gemma-3-27b-it": {
+    "n_items": 2843,
+    "scoring": "decision_probe+act_gt+item_perfect",
+    "know": {
+      "n": 11372,
+      "ok": 10850,
+      "acc": 0.9540977840309532,
+      "missing": 3,
+      "missing_rate": 0.00026380583890256773
+    },
+    "decision": {
+      "n": 11372,
+      "ok": 8942,
+      "acc": 0.7863172704889202,
+      "missing": 10,
+      "missing_rate": 0.0008793527963418924
+    },
+    "decision_item": {
+      "n": 2843,
+      "ok": 469,
+      "acc": 0.164966584593739
+    },
+    "preserve_decision": {
+      "n": 2843,
+      "ok": 2835,
+      "acc": 0.997186071051706,
+      "missing": 3,
+      "missing_rate": 0.001055223355610271
+    },
+    "act_item_unguided": {
+      "n": 2843,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "act_item_guided": {
+      "n": 2843,
+      "ok": 1,
+      "acc": 0.00035174111853675694
+    },
+    "delta_act_item": 0.00035174111853675694,
+    "act_preserve_unguided": {
+      "n": 2843,
+      "ok": 226,
+      "acc": 0.07949349278930706,
+      "missing": 2522,
+      "missing_rate": 0.887091100949701
+    },
+    "act_preserve_guided": {
+      "n": 2843,
+      "ok": 2429,
+      "acc": 0.8543791769257826,
+      "missing": 407,
+      "missing_rate": 0.14315863524446007
+    },
+    "act_translate_unguided": {
+      "n": 8529,
+      "ok": 146,
+      "acc": 0.01711806776878884
+    },
+    "act_translate_guided": {
+      "n": 8529,
+      "ok": 1982,
+      "acc": 0.2323836323132841
+    },
+    "delta_preserve": 0.7748856841364755,
+    "delta_translate": 0.21526556454449525,
+    "act_unguided": {
+      "n": 11372,
+      "ok": 372,
+      "acc": 0.0327119240239184,
+      "missing": 6617,
+      "missing_rate": 0.5818677453394302
+    },
+    "act_guided": {
+      "n": 11372,
+      "ok": 4411,
+      "acc": 0.3878825184664087,
+      "missing": 1030,
+      "missing_rate": 0.09057333802321492
+    },
+    "delta_act": 0.35517059444249033,
+    "know_to_act": {
+      "n": 2843,
+      "gap": 2613,
+      "rate": 0.9190995427365459
+    },
+    "preserve": {
+      "n": 2843,
+      "ok": 2835,
+      "acc": 0.997186071051706,
+      "missing": 3,
+      "missing_rate": 0.001055223355610271
+    },
+    "translation": {
+      "n": 8529,
+      "ok": 146,
+      "acc": 0.01711806776878884
+    },
+    "generation": {
+      "n": 2843,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "unguided": {
+      "n": 2843,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "guided": {
+      "n": 2843,
+      "ok": 1,
+      "acc": 0.00035174111853675694
+    },
+    "delta": 0.00035174111853675694,
+    "act": {
+      "n": 2843,
+      "ok": 0,
+      "acc": 0.0
+    },
+    "know_rules": {
+      "n_ok": 2,
+      "n": 2,
+      "items": [
+        {
+          "id": "N1",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        },
+        {
+          "id": "N2",
+          "expect": "YES",
+          "pred": "YES",
+          "ok": true,
+          "raw": "YES"
+        }
+      ]
+    }
+  },
   "pixtral-12b": {
     "n_items": 2843,
     "scoring": "decision_probe+act_gt+item_perfect",
